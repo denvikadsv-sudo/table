@@ -111,6 +111,12 @@ input,select{font:inherit}
 .tch-sep td{padding:5px 12px 2px;border-bottom:none;background:transparent;font-size:11px;font-weight:700;color:var(--txt3)}
 .mt tbody tr.st-sep:hover td,.mt tbody tr.tch-sep:hover td{background:inherit}
 .rib.fin:hover{background:var(--grn-bg);color:var(--grn)}
+.status-pop{position:fixed;background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);z-index:300;min-width:148px;overflow:hidden;padding:4px}
+.status-pop button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:var(--r-sm);font-size:13px;font-weight:600;color:var(--txt);transition:background .1s;text-align:left}
+.status-pop button:hover{background:var(--surf2)}
+.status-pop button.pop-cur{opacity:.45;cursor:default}
+.status-pop button.pop-cur:hover{background:transparent}
+.sp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 /* LESSON TAGS */
 .lcell{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:26px}
@@ -470,6 +476,12 @@ input,select{font:inherit}
       <button class="btn-pri" id="btnSaveP">Сохранить</button>
     </div>
   </div>
+</div>
+
+<div id="statusPop" class="status-pop hide">
+  <button data-set-status="active"><span class="sp-dot" style="background:var(--grn)"></span>Учащийся</button>
+  <button data-set-status="vacation"><span class="sp-dot" style="background:var(--amb)"></span>Каникулы</button>
+  <button data-set-status="finished"><span class="sp-dot" style="background:var(--txt3)"></span>Завершил</button>
 </div>
 
 <script>
@@ -1382,7 +1394,7 @@ document.getElementById('fLRate').addEventListener('input',updatePrev);
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hide');}));
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');closeM('mWeek');closeM('mPartner');}
+  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');closeM('mWeek');closeM('mPartner');closeStatusPop();}
 });
 document.getElementById('fWkDate').addEventListener('input',updateWkPreview);
 document.getElementById('btnPickThisWk').addEventListener('click',()=>setWkDateTo(getMonday()));
@@ -1436,14 +1448,7 @@ document.getElementById('stBody').addEventListener('click',e=>{
     return;
   }
   const cy=e.target.closest('[data-cyc]');
-  if(cy){
-    const s=S.students.find(s=>s.id===cy.dataset.cyc);
-    if(s){
-      if(s.status==='finished') s.status='active';
-      else s.status=s.status==='active'?'vacation':'active';
-      save();renderSts();renderBal();
-    }
-  }
+  if(cy){openStatusPop(cy.dataset.cyc,cy);return;}
   const fin=e.target.closest('[data-fin]');
   if(fin){
     const s=S.students.find(s=>s.id===fin.dataset.fin);
@@ -1462,6 +1467,39 @@ document.getElementById('stBody').addEventListener('change',e=>{
   if(!w.stBal[sid]) w.stBal[sid]={balStart:0,income:0};
   w.stBal[sid][field]=val;
   save(); renderSts(); renderBal();
+});
+
+/* ── STATUS POPOVER ───────────────────────────── */
+let statusPopSid=null;
+function openStatusPop(sid, anchor) {
+  statusPopSid=sid;
+  const pop=document.getElementById('statusPop');
+  const s=S.students.find(st=>st.id===sid);
+  pop.querySelectorAll('button[data-set-status]').forEach(btn=>{
+    btn.classList.toggle('pop-cur', btn.dataset.setStatus===(s?.status||'active'));
+  });
+  pop.classList.remove('hide');
+  const r=anchor.getBoundingClientRect();
+  let top=r.bottom+5, left=r.left;
+  if(left+160>window.innerWidth-8) left=window.innerWidth-160-8;
+  if(top+110>window.innerHeight-8) top=r.top-115;
+  pop.style.top=top+'px'; pop.style.left=left+'px';
+}
+function closeStatusPop(){
+  document.getElementById('statusPop').classList.add('hide');
+  statusPopSid=null;
+}
+document.getElementById('statusPop').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-set-status]');
+  if(!btn||!statusPopSid) return;
+  if(btn.classList.contains('pop-cur')){closeStatusPop();return;}
+  const s=S.students.find(st=>st.id===statusPopSid);
+  if(s){s.status=btn.dataset.setStatus;save();renderSts();renderBal();}
+  closeStatusPop();
+});
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('statusPop');
+  if(!pop.classList.contains('hide')&&!pop.contains(e.target)&&!e.target.closest('[data-cyc]')) closeStatusPop();
 });
 
 /* ── INIT ─────────────────────────────────────── */
