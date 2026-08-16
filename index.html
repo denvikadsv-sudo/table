@@ -172,6 +172,13 @@ input,select{font:inherit}
 .lprev{background:var(--surf2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:11px 13px;font-size:13px;color:var(--txt2);line-height:1.8;min-height:52px}
 .lprev strong{color:var(--txt)}
 
+/* PAYMENT STATUS */
+.pay-btn{width:100%;padding:7px 10px;border-radius:var(--r-sm);font-size:12px;font-weight:700;text-align:center;border:1px solid;transition:all .15s;margin-top:10px;cursor:pointer;display:block}
+.pay-btn.paid{background:var(--grn-bg);color:var(--grn);border-color:transparent}
+.pay-btn.paid:hover{opacity:.8}
+.pay-btn.unpaid{background:var(--surf2);color:var(--txt3);border-color:var(--bd)}
+.pay-btn.unpaid:hover{background:var(--red-bg);color:var(--red);border-color:transparent}
+
 /* SETTINGS */
 .lt-row{display:grid;grid-template-columns:70px 1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
 .lt-row .fi{padding:7px 10px}
@@ -629,16 +636,25 @@ function renderSts() {
 
 function renderSum() {
   const w=wk(); const wt=calcWk(); const tt=calcT(); const sb=w?.startBal||0;
+  const paid=w?.paid||{};
+  const tchWithLessons=S.teachers.filter(t=>tt[t.id]);
+  const paidCount=tchWithLessons.filter(t=>paid[t.id]).length;
+  const totalCount=tchWithLessons.length;
+  const paidAmt=tchWithLessons.reduce((s,t)=>s+(paid[t.id]?tt[t.id].cost:0),0);
+  const debtAmt=wt.cost-paidAmt;
   let html=`<div class="scard">
     <div class="scard-hdr"><span class="scard-name">Итоги недели</span><span class="scard-sub">${esc(w?.label||'')}</span></div>
     <div class="srow"><span>Баланс начало</span><span class="srval">${rub(sb)}</span></div>
     <div class="srow"><span>Приход от учеников</span><span class="srval" style="color:var(--grn)">${rub(wt.rev)}</span></div>
-    <div class="srow"><span>Выплаты учителям</span><span class="srval" style="color:var(--red)">${rub(wt.cost)}</span></div>
+    <div class="srow"><span>Выплачено учителям</span><span class="srval" style="color:var(--red)">${rub(paidAmt)}</span></div>
+    <div class="srow"><span>Долг учителям</span><span class="srval" style="color:${debtAmt>0?'var(--amb)':'var(--txt3)'}">${debtAmt>0?rub(debtAmt):'—'}</span></div>
     <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(wt.profit)}</span></div>
     <div class="srow tot"><span>Баланс конец</span><span class="srval">${rub(sb+wt.rev)}</span></div>
+    ${totalCount>0?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2);font-size:12px;color:var(--txt3)">Оплачено учителей: <strong style="color:var(--txt)">${paidCount} из ${totalCount}</strong></div>`:''}
   </div>`;
   S.teachers.forEach(t => {
     const tc=tt[t.id]; if(!tc) return;
+    const isPaid=!!paid[t.id];
     html+=`<div class="scard">
       <div class="scard-hdr">
         <span class="ldot" style="background:${t.col};width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
@@ -646,11 +662,19 @@ function renderSum() {
       </div>
       <div class="srow"><span>Уроков</span><span class="srval">${tc.n}</span></div>
       <div class="srow"><span>Приход</span><span class="srval" style="color:var(--grn)">${rub(tc.rev)}</span></div>
-      <div class="srow"><span>Выплата</span><span class="srval" style="color:var(--red)">${rub(tc.cost)}</span></div>
+      <div class="srow"><span>К выплате</span><span class="srval" style="color:var(--red)">${rub(tc.cost)}</span></div>
       <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(tc.rev-tc.cost)}</span></div>
+      <button class="pay-btn ${isPaid?'paid':'unpaid'}" data-pay-tid="${t.id}">${isPaid?'✓ Оплачено':'○ Не оплачено'}</button>
     </div>`;
   });
   document.getElementById('sumGrid').innerHTML=html;
+}
+
+function togglePaid(tid) {
+  const w=wk(); if(!w) return;
+  if(!w.paid) w.paid={};
+  w.paid[tid]=!w.paid[tid];
+  save(); renderSum();
 }
 
 function renderTch() {
@@ -1048,6 +1072,10 @@ document.getElementById('ltRows').addEventListener('click',e=>{
 document.getElementById('settTchGrid').addEventListener('click',e=>{
   const btn=e.target.closest('[data-edit-tch]');
   if(btn) openEditTeacher(btn.dataset.editTch);
+});
+document.getElementById('sumGrid').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-pay-tid]');
+  if(btn) togglePaid(btn.dataset.payTid);
 });
 
 document.getElementById('stBody').addEventListener('click',e=>{
