@@ -56,7 +56,7 @@ input,select{font:inherit}
 .wsel option{background:#1a2a40}
 .hdr-icon{width:30px;height:30px;border-radius:var(--r-sm);color:rgba(255,255,255,.6);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .13s}
 .hdr-icon:hover{background:rgba(255,255,255,.12);color:#fff}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);position:absolute;top:4px;right:4px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);position:absolute;top:4px;right:4px;transition:background .3s}
 .hdr-icon{position:relative}
 
 /* SUMMARY BAR */
@@ -329,18 +329,18 @@ input,select{font:inherit}
       <div class="sync-step">
         <div class="sync-step-num">3</div>
         <div class="sync-step-body">
-          <div class="sync-step-title">Сохраните или загрузите данные</div>
-          <div class="sync-step-desc">ID Gist сохраняется автоматически. На новом устройстве вставьте его вручную:</div>
+          <div class="sync-step-title">Нажмите «Сохранить» один раз</div>
+          <div class="sync-step-desc">После этого данные будут синхронизироваться <strong>автоматически</strong> при каждом изменении. Точка ⬤ в шапке: жёлтая — идёт сохранение, зелёная — синхронизировано.</div>
           <div class="gist-id-row" style="margin-top:6px">
-            <input class="fi" id="syncGistId" placeholder="ID Gist (заполнится после первого сохранения)" autocomplete="off">
+            <input class="fi" id="syncGistId" placeholder="ID Gist (заполнится автоматически)" autocomplete="off">
             <a class="btn-link" id="gistLink" href="#" target="_blank" rel="noopener" style="white-space:nowrap;display:none">Открыть ↗</a>
           </div>
         </div>
       </div>
 
       <div class="sync-actions">
-        <button class="btn-pri" id="btnSaveGist">⬆ Сохранить в Gist</button>
-        <button class="btn-ghost" id="btnLoadGist">⬇ Загрузить из Gist</button>
+        <button class="btn-pri" id="btnSaveGist">⬆ Сохранить (первый раз)</button>
+        <button class="btn-ghost" id="btnLoadGist">⬇ Загрузить (другое устройство)</button>
       </div>
 
       <div class="sync-status" id="syncStatus"></div>
@@ -428,7 +428,66 @@ function initS() {
     curWk:wid, theme:'', sync:{token:'',gistId:'',lastSync:''} };
 }
 
-const save = () => localStorage.setItem('uc-v3', JSON.stringify(S));
+function saveLocal() { localStorage.setItem('uc-v3', JSON.stringify(S)); }
+
+let autoSyncTimer;
+function save() { saveLocal(); scheduleAutoSync(); }
+
+function setSyncDot(state) {
+  const dot = document.getElementById('syncDot');
+  if (state === 'off') { dot.classList.add('hide'); return; }
+  dot.classList.remove('hide');
+  dot.style.background = state === 'ok' ? 'var(--grn)' : state === 'busy' ? 'var(--amb)' : 'var(--red)';
+}
+
+function scheduleAutoSync() {
+  if (!S.sync?.token) return;
+  clearTimeout(autoSyncTimer);
+  setSyncDot('busy');
+  autoSyncTimer = setTimeout(doAutoSync, 2000);
+}
+
+async function doAutoSync() {
+  const tok = S.sync?.token;
+  if (!tok) return;
+  const content = JSON.stringify({teachers:S.teachers,students:S.students,weeks:S.weeks,curWk:S.curWk},null,2);
+  const gid = S.sync?.gistId;
+  const url = gid ? `https://api.github.com/gists/${gid}` : 'https://api.github.com/gists';
+  try {
+    const resp = await fetch(url, {
+      method: gid ? 'PATCH' : 'POST',
+      headers: {'Authorization':'token '+tok,'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
+      body: JSON.stringify({description:'Учебный центр — данные',public:false,files:{[GIST_FILE]:{content}}})
+    });
+    if (!resp.ok) { setSyncDot('err'); return; }
+    const gist = await resp.json();
+    S.sync.gistId = gist.id; S.sync.lastSync = new Date().toISOString();
+    saveLocal(); setSyncDot('ok');
+  } catch { setSyncDot('err'); }
+}
+
+async function autoLoadOnStartup() {
+  const tok = S.sync?.token;
+  const gid = S.sync?.gistId;
+  if (!tok || !gid) return;
+  setSyncDot('busy');
+  try {
+    const resp = await fetch(`https://api.github.com/gists/${gid}`, {
+      headers: {'Authorization':'token '+tok,'X-GitHub-Api-Version':'2022-11-28'}
+    });
+    if (!resp.ok) { setSyncDot('err'); return; }
+    const gist = await resp.json();
+    const raw = gist.files[GIST_FILE]?.content;
+    if (!raw) { setSyncDot('err'); return; }
+    const data = JSON.parse(raw);
+    S.teachers = data.teachers?.length ? data.teachers : TEACHERS;
+    S.students = data.students || [];
+    S.weeks = data.weeks || {};
+    S.curWk = data.curWk || Object.keys(S.weeks)[0] || null;
+    S.sync.lastSync = new Date().toISOString();
+    saveLocal(); render(); setSyncDot('ok');
+  } catch { setSyncDot('err'); }
+}
 const wk = () => S.weeks[S.curWk] || null;
 const getT = tid => S.teachers.find(t => t.id === tid);
 const getLT = (t, ltid) => t?.types.find(lt => lt.id === ltid);
@@ -702,7 +761,7 @@ function setSyncBusy(busy) {
   const btnSave=document.getElementById('btnSaveGist');
   const btnLoad=document.getElementById('btnLoadGist');
   btnSave.disabled=busy; btnLoad.disabled=busy;
-  if(busy) setSyncStatus('<span class="spinner"></span> Подождите…','loading');
+  if(busy) { setSyncStatus('<span class="spinner"></span> Подождите…','loading'); setSyncDot('busy'); }
 }
 
 function saveToken() {
@@ -737,9 +796,10 @@ async function saveToGist() {
     document.getElementById('syncGistId').value=gist.id;
     document.getElementById('lastSyncTime').textContent='Последняя синхронизация: '+new Date().toLocaleString('ru-RU');
     updateGistLink(gist.id);
-    document.getElementById('syncDot').classList.remove('hide');
-    setSyncStatus('✓ Сохранено. ID: <strong>'+esc(gist.id)+'</strong> — скопируйте для других устройств','ok');
+    setSyncDot('ok');
+    setSyncStatus('✓ Сохранено. Синхронизация теперь автоматическая.','ok');
   } catch(e) {
+    setSyncDot('err');
     setSyncStatus('Ошибка: '+esc(e.message),'err');
   } finally { setSyncBusy(false); }
 }
@@ -767,9 +827,10 @@ async function loadFromGist() {
     S.sync.token=tok; S.sync.gistId=gid; S.sync.lastSync=new Date().toISOString();
     save(); render();
     document.getElementById('lastSyncTime').textContent='Последняя синхронизация: '+new Date().toLocaleString('ru-RU');
-    document.getElementById('syncDot').classList.remove('hide');
+    setSyncDot('ok');
     setSyncStatus('✓ Данные загружены','ok');
   } catch(e) {
+    setSyncDot('err');
     setSyncStatus('Ошибка: '+esc(e.message),'err');
   } finally { setSyncBusy(false); }
 }
@@ -853,8 +914,9 @@ document.getElementById('stBody').addEventListener('click',e=>{
 
 /* ── INIT ─────────────────────────────────────── */
 loadS();
-if(S.sync?.gistId) document.getElementById('syncDot').classList.remove('hide');
+if(S.sync?.gistId) setSyncDot(S.sync?.token ? 'ok' : 'off');
 render();
+autoLoadOnStartup();
 </script>
 </body>
 </html>
