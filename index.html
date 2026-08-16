@@ -602,6 +602,11 @@ async function autoLoadOnStartup() {
     autoSelectCurrentWeek(); saveLocal(); render(); setSyncDot('ok');
   } catch { setSyncDot('err'); }
 }
+const sortedWkIds = () => Object.values(S.weeks)
+  .sort((a,b)=>{
+    if(a.startDate&&b.startDate) return a.startDate.localeCompare(b.startDate);
+    return 0;
+  }).map(w=>w.id);
 const wk = () => S.weeks[S.curWk] || null;
 const getT = tid => S.teachers.find(t => t.id === tid);
 const getLT = (t, ltid) => t?.types.find(lt => lt.id === ltid);
@@ -634,9 +639,10 @@ function calcT() {
 
 /* ── RENDER ───────────────────────────────────── */
 function renderWkSel() {
-  const sel = document.getElementById('wkSel');
-  sel.innerHTML = Object.values(S.weeks).map(w =>
-    `<option value="${w.id}"${w.id===S.curWk?' selected':''}>${esc(w.label)}</option>`).join('');
+  const sel=document.getElementById('wkSel');
+  sel.innerHTML=sortedWkIds().map(id=>{const w=S.weeks[id];
+    return `<option value="${w.id}"${w.id===S.curWk?' selected':''}>${esc(w.label)}</option>`;
+  }).join('');
 }
 
 function renderBal() {
@@ -1161,7 +1167,7 @@ function saveWk() {
   S.curWk=wid; save(); render(); closeM('mWeek');
 }
 function navWk(dir) {
-  const ids=Object.keys(S.weeks); const idx=ids.indexOf(S.curWk);
+  const ids=sortedWkIds(); const idx=ids.indexOf(S.curWk);
   const ni=idx+dir; if(ni>=0&&ni<ids.length){S.curWk=ids[ni];save();render();}
 }
 
