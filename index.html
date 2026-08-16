@@ -308,7 +308,11 @@ input,select{font:inherit}
     <div class="mbody">
       <div class="fg"><label>Учитель</label><select class="fi" id="fTeacher"></select></div>
       <div class="fg"><label>Тип урока</label><select class="fi" id="fLType"></select></div>
-      <div class="fg"><label>Количество уроков</label><input class="fi" id="fCount" type="number" value="1" min="1" max="20" style="width:100px"></div>
+      <div class="frow">
+        <div class="fg"><label>Кол-во уроков</label><input class="fi" id="fCount" type="number" value="1" min="1" max="20"></div>
+        <div class="fg"><label>Цена (клиент) ₽</label><input class="fi" id="fLPrice" type="number" min="0"></div>
+        <div class="fg"><label>Ставка (учитель) ₽</label><input class="fi" id="fLRate" type="number" min="0"></div>
+      </div>
       <div class="lprev" id="lPrev">Выберите учителя и тип урока</div>
     </div>
     <div class="mftr"><button class="btn-ghost" data-close="mLesson">Отмена</button><button class="btn-pri" id="btnSaveL">Добавить</button></div>
@@ -544,10 +548,13 @@ const getT = tid => S.teachers.find(t => t.id === tid);
 const getLT = (t, ltid) => t?.types.find(lt => lt.id === ltid);
 
 /* ── CALC ─────────────────────────────────────── */
+const lp = l => l.p !== undefined ? l.p : (getLT(getT(l.tid),l.ltid)?.p||0);
+const lr = l => l.r !== undefined ? l.r : (getLT(getT(l.tid),l.ltid)?.r||0);
+
 function calcSt(sid) {
   const ls = wk()?.lessons?.[sid] || [];
   let rev = 0, cost = 0;
-  ls.forEach(l => { const t=getT(l.tid); const lt=getLT(t,l.ltid); if(lt){rev+=lt.p*l.n;cost+=lt.r*l.n;} });
+  ls.forEach(l => { rev+=lp(l)*l.n; cost+=lr(l)*l.n; });
   return {rev, cost, profit:rev-cost};
 }
 function calcWk() {
@@ -560,8 +567,7 @@ function calcT() {
   S.students.forEach(s => {
     (wk()?.lessons?.[s.id]||[]).forEach(l => {
       if(!res[l.tid]) res[l.tid]={rev:0,cost:0,n:0};
-      const t=getT(l.tid); const lt=getLT(t,l.ltid);
-      if(lt){res[l.tid].rev+=lt.p*l.n;res[l.tid].cost+=lt.r*l.n;res[l.tid].n+=l.n;}
+      res[l.tid].rev+=lp(l)*l.n; res[l.tid].cost+=lr(l)*l.n; res[l.tid].n+=l.n;
     });
   });
   return res;
@@ -597,13 +603,14 @@ function renderSts() {
     const bTxt=s.status==='active'?'Учащийся':'Каникулы';
     let tags=ls.map(l => {
       const t=getT(l.tid); const lt=getLT(t,l.ltid);
-      if(!t||!lt) return '';
+      if(!t) return '';
+      const dur=lt?.dur||'?';
       return `<span class="ltag">
         <span class="ldot" style="background:${t.col}"></span>
         <span class="ltag-name">${esc(t.name)}</span>
-        <span class="ltag-info">${l.n}×${lt.dur}мин</span>
-        <span class="ltag-amt">${rub(lt.p*l.n)}</span>
-        <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${lt.id}">×</button>
+        <span class="ltag-info">${l.n}×${dur}мин</span>
+        <span class="ltag-amt">${rub(lp(l)*l.n)}</span>
+        <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${l.ltid}">×</button>
       </span>`;
     }).join('');
     tags += `<button class="add-l-btn" data-add-ls="${s.id}">+ урок</button>`;
@@ -781,18 +788,30 @@ function fillTeacherSel() {
 function fillLTypeSel() {
   const t=getT(document.getElementById('fTeacher').value);
   document.getElementById('fLType').innerHTML=t
-    ?t.types.map(lt=>`<option value="${lt.id}">${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽  (учителю: ${lt.r.toLocaleString('ru-RU')}₽)</option>`).join('')
+    ?t.types.map(lt=>`<option value="${lt.id}">${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽</option>`).join('')
     :'';
+  prefillPrices();
   updatePrev();
+}
+function prefillPrices(keepCustom) {
+  const t=getT(document.getElementById('fTeacher').value);
+  const lt=getLT(t,document.getElementById('fLType').value);
+  if(!lt) return;
+  if(keepCustom) return;
+  const existing=lessSid&&wk()?.lessons?.[lessSid]?.find(l=>l.tid===t?.id&&l.ltid===lt.id);
+  document.getElementById('fLPrice').value=existing?.p!==undefined?existing.p:lt.p;
+  document.getElementById('fLRate').value=existing?.r!==undefined?existing.r:lt.r;
 }
 function updatePrev() {
   const t=getT(document.getElementById('fTeacher').value);
   const lt=getLT(t,document.getElementById('fLType').value);
   const n=parseInt(document.getElementById('fCount').value)||0;
+  const lp=parseInt(document.getElementById('fLPrice').value)||0;
+  const lr=parseInt(document.getElementById('fLRate').value)||0;
   const el=document.getElementById('lPrev');
   if(!t||!lt||n<1){el.textContent='Укажите учителя, тип и количество';return;}
-  const rv=lt.p*n,co=lt.r*n,pr=rv-co;
-  el.innerHTML=`<strong>${esc(t.name)}</strong> · ${n}×${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽<br>
+  const rv=lp*n,co=lr*n,pr=rv-co;
+  el.innerHTML=`<strong>${esc(t.name)}</strong> · ${n}×${lt.dur} мин<br>
     Клиент: <strong style="color:var(--grn)">${rub(rv)}</strong> ·
     Учителю: <strong style="color:var(--red)">${rub(co)}</strong> ·
     Прибыль: <strong style="color:var(--acc)">${rub(pr)}</strong>`;
@@ -806,12 +825,14 @@ function saveL() {
   const tid=document.getElementById('fTeacher').value;
   const ltid=document.getElementById('fLType').value;
   const n=parseInt(document.getElementById('fCount').value)||0;
+  const lp=parseInt(document.getElementById('fLPrice').value)||0;
+  const lr=parseInt(document.getElementById('fLRate').value)||0;
   if(!tid||!ltid||n<1) return;
   const w=wk(); if(!w) return;
   if(!w.lessons) w.lessons={};
   if(!w.lessons[lessSid]) w.lessons[lessSid]=[];
   const ex=w.lessons[lessSid].find(l=>l.tid===tid&&l.ltid===ltid);
-  if(ex) ex.n+=n; else w.lessons[lessSid].push({tid,ltid,n});
+  if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,ltid,n,p:lp,r:lr});
   save(); closeM('mLesson'); render();
 }
 function removeL(sid,tid,ltid) {
@@ -1051,8 +1072,10 @@ document.getElementById('btnAddSt').addEventListener('click',openAddSt);
 document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
 document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
-document.getElementById('fLType').addEventListener('change',updatePrev);
+document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
 document.getElementById('fCount').addEventListener('input',updatePrev);
+document.getElementById('fLPrice').addEventListener('input',updatePrev);
+document.getElementById('fLRate').addEventListener('input',updatePrev);
 
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hide');}));
