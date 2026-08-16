@@ -283,6 +283,12 @@ input,select{font:inherit}
     </div>
     <div class="tgrid" id="settTchGrid"></div>
 
+    <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:15px;font-weight:800">Партнёры</span>
+      <button class="btn-pri" id="btnAddP">+ Партнёр</button>
+    </div>
+    <div class="tgrid" id="partnersGrid"></div>
+
     <div style="margin-top:20px;margin-bottom:10px;font-size:15px;font-weight:800">Синхронизация</div>
     <div class="scard" style="max-width:480px" id="syncCard">
     </div>
@@ -444,6 +450,23 @@ input,select{font:inherit}
   </div>
 </div>
 
+<!-- Modal: Partner -->
+<div class="mbg hide" id="mPartner">
+  <div class="modal" style="max-width:380px">
+    <div class="mhdr"><h2 id="mPTitle">Партнёр</h2><button class="mcls" data-close="mPartner">×</button></div>
+    <div class="mbody">
+      <div class="fg"><label>Имя партнёра</label><input class="fi" id="fPName" placeholder="Арендодатель"></div>
+      <div class="fg"><label>Ставка за 1 урок ₽</label><input class="fi" id="fPRate" type="number" min="0" value="200"></div>
+    </div>
+    <div class="mftr">
+      <button class="btn-ghost" id="btnDelP" style="color:var(--red)">Удалить</button>
+      <div style="flex:1"></div>
+      <button class="btn-ghost" data-close="mPartner">Отмена</button>
+      <button class="btn-pri" id="btnSaveP">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -519,6 +542,7 @@ function loadS() {
     if (saved) {
       S = JSON.parse(saved);
       if (!S.teachers?.length) S.teachers = TEACHERS;
+      if (!S.partners) S.partners = [];
       if (!S.sync) S.sync = {token:'',gistId:'',lastSync:''};
     } else { initS(); }
   } catch { initS(); }
@@ -527,7 +551,7 @@ function loadS() {
 
 function initS() {
   const monday=getMonday(); const wid='w'+Date.now();
-  S = { teachers:TEACHERS, students:DEF_STUDENTS,
+  S = { teachers:TEACHERS, students:DEF_STUDENTS, partners:[],
     weeks:{[wid]:{id:wid,label:weekLabel(monday),startDate:toISODate(monday),startBal:0,lessons:DEF_LESSONS,stBal:{}}},
     curWk:wid, theme:'', sync:{token:'',gistId:'',lastSync:''} };
 }
@@ -564,7 +588,7 @@ function scheduleAutoSync() {
 async function doAutoSync() {
   const tok = S.sync?.token;
   if (!tok) return;
-  const content = JSON.stringify({teachers:S.teachers,students:S.students,weeks:S.weeks,curWk:S.curWk},null,2);
+  const content = JSON.stringify({teachers:S.teachers,students:S.students,partners:S.partners,weeks:S.weeks,curWk:S.curWk},null,2);
   const gid = S.sync?.gistId;
   const url = gid ? `https://api.github.com/gists/${gid}` : 'https://api.github.com/gists';
   try {
@@ -596,6 +620,7 @@ async function autoLoadOnStartup() {
     const data = JSON.parse(raw);
     S.teachers = data.teachers?.length ? data.teachers : TEACHERS;
     S.students = data.students || [];
+    S.partners = data.partners || [];
     S.weeks = data.weeks || {};
     S.curWk = data.curWk || Object.keys(S.weeks)[0] || null;
     S.sync.lastSync = new Date().toISOString();
@@ -635,6 +660,13 @@ function calcT() {
     });
   });
   return res;
+}
+
+function calcTotalN() {
+  const w=wk(); if(!w) return 0;
+  let n=0;
+  S.students.forEach(s=>{(w.lessons?.[s.id]||[]).forEach(l=>{n+=l.n;});});
+  return n;
 }
 
 /* ── BALANCE HELPERS ──────────────────────────── */
@@ -737,19 +769,25 @@ function renderSts() {
 
 function renderSum() {
   const w=wk(); const wt=calcWk(); const tt=calcT(); const sb=w?.startBal||0;
-  const paid=w?.paid||{};
+  const paid=w?.paid||{}; const partnerPaid=w?.partnerPaid||{};
   const tchWithLessons=S.teachers.filter(t=>tt[t.id]);
   const paidCount=tchWithLessons.filter(t=>paid[t.id]).length;
   const totalCount=tchWithLessons.length;
   const paidAmt=tchWithLessons.reduce((s,t)=>s+(paid[t.id]?tt[t.id].cost:0),0);
   const debtAmt=wt.cost-paidAmt;
+  const totalN=calcTotalN();
+  const partnerTotal=S.partners.reduce((s,p)=>s+totalN*p.rate,0);
+  const partnerPaidAmt=S.partners.reduce((s,p)=>s+(partnerPaid[p.id]?totalN*p.rate:0),0);
+  const partnerDebt=partnerTotal-partnerPaidAmt;
   let html=`<div class="scard">
     <div class="scard-hdr"><span class="scard-name">Итоги недели</span><span class="scard-sub">${esc(w?.label||'')}</span></div>
     <div class="srow"><span>Баланс начало</span><span class="srval">${rub(sb)}</span></div>
     <div class="srow"><span>Приход от учеников</span><span class="srval" style="color:var(--grn)">${rub(wt.rev)}</span></div>
     <div class="srow"><span>Выплачено учителям</span><span class="srval" style="color:var(--red)">${rub(paidAmt)}</span></div>
     <div class="srow"><span>Долг учителям</span><span class="srval" style="color:${debtAmt>0?'var(--amb)':'var(--txt3)'}">${debtAmt>0?rub(debtAmt):'—'}</span></div>
-    <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(wt.profit)}</span></div>
+    ${S.partners.length>0?`<div class="srow"><span>Выплачено партнёрам</span><span class="srval" style="color:var(--red)">${rub(partnerPaidAmt)}</span></div>`:''}
+    ${S.partners.length>0&&partnerDebt>0?`<div class="srow"><span>Долг партнёрам</span><span class="srval" style="color:var(--amb)">${rub(partnerDebt)}</span></div>`:''}
+    <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(wt.profit-partnerTotal)}</span></div>
     <div class="srow tot"><span>Баланс конец</span><span class="srval">${rub(sb+wt.rev)}</span></div>
     ${totalCount>0?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2);font-size:12px;color:var(--txt3)">Оплачено учителей: <strong style="color:var(--txt)">${paidCount} из ${totalCount}</strong></div>`:''}
   </div>`;
@@ -768,7 +806,27 @@ function renderSum() {
       <button class="pay-btn ${isPaid?'paid':'unpaid'}" data-pay-tid="${t.id}">${isPaid?'✓ Оплачено':'○ Не оплачено'}</button>
     </div>`;
   });
+  S.partners.forEach(p => {
+    const cost=totalN*p.rate;
+    const isPaid=!!partnerPaid[p.id];
+    html+=`<div class="scard">
+      <div class="scard-hdr">
+        <span class="scard-name">${esc(p.name)}</span><span class="scard-sub">партнёр</span>
+      </div>
+      <div class="srow"><span>Уроков</span><span class="srval">${totalN}</span></div>
+      <div class="srow"><span>Ставка</span><span class="srval">${rub(p.rate)}/урок</span></div>
+      <div class="srow tot"><span>К выплате</span><span class="srval" style="color:var(--red)">${rub(cost)}</span></div>
+      <button class="pay-btn ${isPaid?'paid':'unpaid'}" data-pay-pid="${p.id}">${isPaid?'✓ Оплачено':'○ Не оплачено'}</button>
+    </div>`;
+  });
   document.getElementById('sumGrid').innerHTML=html;
+}
+
+function togglePartnerPaid(pid) {
+  const w=wk(); if(!w) return;
+  if(!w.partnerPaid) w.partnerPaid={};
+  w.partnerPaid[pid]=!w.partnerPaid[pid];
+  save(); renderSum();
 }
 
 function togglePaid(tid) {
@@ -852,6 +910,19 @@ function renderSettings() {
     html+=`</div>`;
   });
   document.getElementById('settTchGrid').innerHTML=html;
+  let pHtml='';
+  S.partners.forEach(p=>{
+    pHtml+=`<div class="tcard">
+      <div class="tcard-hdr">
+        <div style="flex:1"><h3>${esc(p.name)}</h3><p>партнёр</p></div>
+        <button class="rib" data-edit-p="${p.id}" title="Редактировать">✏</button>
+      </div>
+      <div class="rrow rhdr"><span>Выплата</span><span class="r">За урок</span></div>
+      <div class="rrow"><span style="color:var(--txt2)">Ставка</span><span class="r" style="color:var(--red)">${rub(p.rate)}</span></div>
+    </div>`;
+  });
+  if(!pHtml) pHtml=`<div style="color:var(--txt3);font-size:13px;padding:8px 0">Партнёров нет — нажмите «+ Партнёр»</div>`;
+  document.getElementById('partnersGrid').innerHTML=pHtml;
 }
 
 function render() { renderWkSel(); renderBal(); renderSts(); }
@@ -1046,6 +1117,46 @@ function deleteTeacher() {
   save(); closeM('mTeacher'); renderSettings(); showToast('Учитель удалён');
 }
 
+/* ── PARTNER MODAL ────────────────────────────── */
+let editPid=null;
+function openAddPartner() {
+  editPid=null;
+  document.getElementById('mPTitle').textContent='Новый партнёр';
+  document.getElementById('fPName').value='';
+  document.getElementById('fPRate').value=200;
+  document.getElementById('btnDelP').style.display='none';
+  openM('mPartner'); setTimeout(()=>document.getElementById('fPName').focus(),50);
+}
+function openEditPartner(pid) {
+  const p=S.partners.find(p=>p.id===pid); if(!p) return;
+  editPid=pid;
+  document.getElementById('mPTitle').textContent='Редактировать партнёра';
+  document.getElementById('fPName').value=p.name;
+  document.getElementById('fPRate').value=p.rate;
+  document.getElementById('btnDelP').style.display='inline-flex';
+  openM('mPartner'); setTimeout(()=>document.getElementById('fPName').focus(),50);
+}
+function savePartner() {
+  const name=document.getElementById('fPName').value.trim();
+  const rate=parseFloat(document.getElementById('fPRate').value)||0;
+  if(!name) return;
+  if(editPid){
+    const p=S.partners.find(p=>p.id===editPid); if(!p) return;
+    p.name=name; p.rate=rate;
+  } else {
+    S.partners.push({id:'p'+Date.now(),name,rate});
+  }
+  save(); closeM('mPartner'); renderSettings();
+  showToast(editPid?'Партнёр обновлён':'Партнёр добавлен');
+}
+function deletePartner() {
+  if(!editPid) return;
+  const p=S.partners.find(p=>p.id===editPid); if(!p) return;
+  if(!confirm(`Удалить партнёра «${p.name}»?`)) return;
+  S.partners=S.partners.filter(pt=>pt.id!==editPid);
+  save(); closeM('mPartner'); renderSettings(); showToast('Партнёр удалён');
+}
+
 /* ── SYNC (GITHUB GIST) ───────────────────────── */
 const GIST_FILE='uc-data.json';
 
@@ -1095,7 +1206,7 @@ async function saveToGist() {
   const tok=(document.getElementById('syncToken').value.trim())||S.sync?.token;
   if(!tok){setSyncStatus('Введите GitHub токен','err');return;}
   setSyncBusy(true);
-  const content=JSON.stringify({teachers:S.teachers,students:S.students,weeks:S.weeks,curWk:S.curWk},null,2);
+  const content=JSON.stringify({teachers:S.teachers,students:S.students,partners:S.partners,weeks:S.weeks,curWk:S.curWk},null,2);
   try {
     const gid=S.sync?.gistId||document.getElementById('syncGistId').value.trim();
     const url=gid?`https://api.github.com/gists/${gid}`:'https://api.github.com/gists';
@@ -1231,7 +1342,7 @@ document.getElementById('fLRate').addEventListener('input',updatePrev);
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hide');}));
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');closeM('mWeek');}
+  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');closeM('mWeek');closeM('mPartner');}
 });
 document.getElementById('fWkDate').addEventListener('input',updateWkPreview);
 document.getElementById('btnPickThisWk').addEventListener('click',()=>setWkDateTo(getMonday()));
@@ -1242,6 +1353,9 @@ document.getElementById('btnSaveWk').addEventListener('click',saveWk);
 document.getElementById('btnAddTch').addEventListener('click',openAddTeacher);
 document.getElementById('btnSaveTch').addEventListener('click',saveTeacher);
 document.getElementById('btnDelTch').addEventListener('click',deleteTeacher);
+document.getElementById('btnAddP').addEventListener('click',openAddPartner);
+document.getElementById('btnSaveP').addEventListener('click',savePartner);
+document.getElementById('btnDelP').addEventListener('click',deletePartner);
 document.getElementById('btnAddLT').addEventListener('click',()=>{
   const rows=collectLTRows(); rows.push({dur:60,p:0,r:0}); renderLTRows(rows);
 });
@@ -1253,9 +1367,15 @@ document.getElementById('settTchGrid').addEventListener('click',e=>{
   const btn=e.target.closest('[data-edit-tch]');
   if(btn) openEditTeacher(btn.dataset.editTch);
 });
+document.getElementById('partnersGrid').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-edit-p]');
+  if(btn) openEditPartner(btn.dataset.editP);
+});
 document.getElementById('sumGrid').addEventListener('click',e=>{
   const btn=e.target.closest('[data-pay-tid]');
   if(btn) togglePaid(btn.dataset.payTid);
+  const pbtn=e.target.closest('[data-pay-pid]');
+  if(pbtn) togglePartnerPaid(pbtn.dataset.payPid);
 });
 
 document.getElementById('stBody').addEventListener('click',e=>{
