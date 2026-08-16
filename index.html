@@ -198,6 +198,11 @@ input,select{font:inherit}
 .gist-id-row{display:flex;gap:6px;align-items:center}
 .gist-id-row .fi{flex:1;font-family:monospace;font-size:13px}
 
+/* INLINE TABLE INPUTS */
+.tbl-inp{background:transparent;border:none;outline:none;text-align:right;width:100%;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--txt);padding:0;min-width:70px}
+.tbl-inp:focus{color:var(--acc)}
+.tbl-inp::placeholder{color:var(--txt3);font-weight:400;font-size:12px}
+
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--hdr);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:transform .25s,opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -259,8 +264,9 @@ input,select{font:inherit}
           <th class="col-num">#</th><th class="col-cls">Кл.</th>
           <th class="col-name">Имя ученика</th><th class="col-st">Статус</th>
           <th>Уроки недели</th>
-          <th class="col-money r">Приход</th><th class="col-money r">Учителю</th>
-          <th class="col-money r">Прибыль</th><th class="col-act"></th>
+          <th class="col-money r">Баланс нач.</th>
+          <th class="col-money r">Приход</th>
+          <th class="col-money r">Остаток кон.</th><th class="col-act"></th>
         </tr></thead>
         <tbody id="stBody"></tbody>
         <tfoot id="stFoot"></tfoot>
@@ -604,10 +610,15 @@ function renderSts() {
     body.innerHTML='<tr class="empty-msg"><td colspan="9">Учеников нет — нажмите «+ Ученик»</td></tr>';
     foot.innerHTML=''; return;
   }
-  let rows='';
+  let rows=''; let totBs=0,totInc=0,totEnd=0;
   S.students.forEach(s => {
     const ls=w?.lessons?.[s.id]||[];
     const c=calcSt(s.id);
+    const sb=w?.stBal?.[s.id]||{};
+    const balStart=sb.balStart||0;
+    const income=sb.income||0;
+    const balEnd=balStart+income-c.rev;
+    totBs+=balStart; totInc+=income; totEnd+=balEnd;
     const bCls=s.status==='active'?'badge-on':'badge-vac';
     const bTxt=s.status==='active'?'Учащийся':'Каникулы';
     let tags=ls.map(l => {
@@ -623,16 +634,16 @@ function renderSts() {
       </span>`;
     }).join('');
     tags += `<button class="add-l-btn" data-add-ls="${s.id}">+ урок</button>`;
-    const has=c.rev>0;
+    const endCls=balEnd>0?'mn-g':balEnd<0?'mn-r':'mn-d';
     rows+=`<tr>
       <td class="mn" style="color:var(--txt3)">${s.num}</td>
       <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
       <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
-      <td class="r mn ${has?'mn-g':'mn-d'}">${has?rub(c.rev):'—'}</td>
-      <td class="r mn ${c.cost>0?'mn-r':'mn-d'}">${c.cost>0?rub(c.cost):'—'}</td>
-      <td class="r mn ${c.profit>0?'mn-a':c.profit<0?'mn-r':'mn-d'}">${has?rub(c.profit):'—'}</td>
+      <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number"></td>
+      <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="income" value="${income||''}" placeholder="0 ₽" type="number"></td>
+      <td class="r mn ${endCls}">${balEnd!==0?rub(balEnd):'—'}</td>
       <td><div class="racts">
         <button class="rib" data-edit="${s.id}" title="Редактировать">✏</button>
         <button class="rib del" data-del="${s.id}" title="Удалить">✕</button>
@@ -640,12 +651,12 @@ function renderSts() {
     </tr>`;
   });
   body.innerHTML=rows;
-  const tot=calcWk();
+  const endTotCls=totEnd>0?'mn-g':totEnd<0?'mn-r':'mn-d';
   foot.innerHTML=`<tr>
     <td colspan="5" class="r" style="color:var(--txt3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Итого за неделю</td>
-    <td class="r mn mn-g">${rub(tot.rev)}</td>
-    <td class="r mn mn-r">${rub(tot.cost)}</td>
-    <td class="r mn mn-a">${rub(tot.profit)}</td>
+    <td class="r mn">${totBs!==0?rub(totBs):'—'}</td>
+    <td class="r mn mn-g">${totInc>0?rub(totInc):'—'}</td>
+    <td class="r mn ${endTotCls}">${totEnd!==0?rub(totEnd):'—'}</td>
     <td></td>
   </tr>`;
 }
@@ -1072,7 +1083,16 @@ function addWk() {
   const label=prompt('Период недели (например: 22–28 июня):');
   if(!label) return;
   const wid='w'+Date.now();
-  S.weeks[wid]={id:wid,label:label.trim(),startBal:0,lessons:{}};
+  const prevW=wk();
+  const stBal={};
+  if(prevW) {
+    S.students.forEach(s => {
+      const sb=prevW.stBal?.[s.id]||{};
+      const balEnd=(sb.balStart||0)+(sb.income||0)-calcSt(s.id).rev;
+      if(balEnd!==0) stBal[s.id]={balStart:balEnd,income:0};
+    });
+  }
+  S.weeks[wid]={id:wid,label:label.trim(),startBal:0,lessons:{},stBal};
   S.curWk=wid; save(); render();
 }
 function navWk(dir) {
@@ -1167,6 +1187,18 @@ document.getElementById('stBody').addEventListener('click',e=>{
     const s=S.students.find(s=>s.id===cy.dataset.cyc);
     if(s){s.status=s.status==='active'?'vacation':'active';save();renderSts();renderBal();}
   }
+});
+
+document.getElementById('stBody').addEventListener('change',e=>{
+  const inp=e.target.closest('[data-bal-sid]');
+  if(!inp) return;
+  const sid=inp.dataset.balSid; const field=inp.dataset.balField;
+  const val=parseFloat(inp.value)||0;
+  const w=wk(); if(!w) return;
+  if(!w.stBal) w.stBal={};
+  if(!w.stBal[sid]) w.stBal[sid]={balStart:0,income:0};
+  w.stBal[sid][field]=val;
+  save(); renderSts(); renderBal();
 });
 
 /* ── INIT ─────────────────────────────────────── */
