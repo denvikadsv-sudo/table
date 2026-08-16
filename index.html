@@ -106,6 +106,11 @@ input,select{font:inherit}
 .badge:hover{opacity:.75}
 .badge-on{background:var(--grn-bg);color:var(--grn)}
 .badge-vac{background:var(--amb-bg);color:var(--amb)}
+.badge-fin{background:var(--surf2);color:var(--txt3)}
+.st-sep td{background:var(--surf2);padding:4px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
+.tch-sep td{padding:5px 12px 2px;border-bottom:none;background:transparent;font-size:11px;font-weight:700;color:var(--txt3)}
+.mt tbody tr.st-sep:hover td,.mt tbody tr.tch-sep:hover td{background:inherit}
+.rib.fin:hover{background:var(--grn-bg);color:var(--grn)}
 
 /* LESSON TAGS */
 .lcell{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:26px}
@@ -310,7 +315,7 @@ input,select{font:inherit}
       <div class="frow">
         <div class="fg"><label>Группа (необяз.)</label><input class="fi" id="fGroup" placeholder="Ученики Елены"></div>
         <div class="fg w120"><label>Статус</label>
-          <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="vacation">Каникулы</option></select>
+          <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="vacation">Каникулы</option><option value="finished">Завершил</option></select>
         </div>
       </div>
     </div>
@@ -710,23 +715,57 @@ function renderBal() {
   document.getElementById('sEnd').textContent = rub(sb+tot.rev);
 }
 
+function getPrimaryTid(s, w) {
+  const ls=w?.lessons?.[s.id]||[];
+  return ls.length>0 ? ls[0].tid : null;
+}
+function sortStudents(students, w) {
+  const order={active:0,vacation:1,finished:2};
+  const tidOrder={};
+  S.teachers.forEach((t,i)=>{tidOrder[t.id]=i;});
+  return [...students].sort((a,b)=>{
+    const sa=order[a.status]??0, sb=order[b.status]??0;
+    if(sa!==sb) return sa-sb;
+    const ta=getPrimaryTid(a,w), tb=getPrimaryTid(b,w);
+    if(!ta&&!tb) return 0;
+    if(!ta) return 1; if(!tb) return -1;
+    return (tidOrder[ta]??99)-(tidOrder[tb]??99);
+  });
+}
+
 function renderSts() {
   const w=wk(); const body=document.getElementById('stBody'); const foot=document.getElementById('stFoot');
   if (!S.students.length) {
     body.innerHTML='<tr class="empty-msg"><td colspan="9">Учеников нет — нажмите «+ Ученик»</td></tr>';
     foot.innerHTML=''; return;
   }
+  const sorted=sortStudents(S.students,w);
+  const activeTids=[...new Set(sorted.filter(s=>s.status==='active').map(s=>getPrimaryTid(s,w)).filter(Boolean))];
+  const showTchSep=activeTids.length>1;
   let rows=''; let totBs=0,totInc=0,totEnd=0;
-  S.students.forEach(s => {
+  let lastStatus=null; let lastTid=null;
+  sorted.forEach(s => {
     const ls=w?.lessons?.[s.id]||[];
-    const c=calcSt(s.id);
     const prevWkId=getPrevWkId(S.curWk);
     const income=w?.stBal?.[s.id]?.income||0;
     const balStart=getBalStart(s.id,S.curWk);
     const balEnd=getBalEnd(s.id,S.curWk);
     totBs+=balStart; totInc+=income; totEnd+=balEnd;
-    const bCls=s.status==='active'?'badge-on':'badge-vac';
-    const bTxt=s.status==='active'?'Учащийся':'Каникулы';
+    if(s.status!==lastStatus){
+      if(s.status==='vacation') rows+=`<tr class="st-sep"><td colspan="9">🌴 Каникулы</td></tr>`;
+      else if(s.status==='finished') rows+=`<tr class="st-sep"><td colspan="9">✓ Завершили</td></tr>`;
+      lastStatus=s.status; lastTid=null;
+    }
+    if(s.status==='active'&&showTchSep){
+      const tid=getPrimaryTid(s,w);
+      if(tid&&tid!==lastTid){
+        const t=getT(tid);
+        if(t) rows+=`<tr class="tch-sep"><td colspan="9"><span class="ldot" style="background:${t.col};width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle"></span>${esc(t.name)}</td></tr>`;
+        lastTid=tid;
+      }
+    }
+    const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':'badge-vac';
+    const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':'Каникулы';
     let tags=ls.map(l => {
       const t=getT(l.tid); const lt=getLT(t,l.ltid);
       if(!t) return '';
@@ -751,6 +790,7 @@ function renderSts() {
       <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="income" value="${income||''}" placeholder="0 ₽" type="number"></td>
       <td class="r mn ${endCls}">${balEnd!==0?rub(balEnd):'—'}</td>
       <td><div class="racts">
+        ${s.status!=='finished'?`<button class="rib fin" data-fin="${s.id}" title="Завершил">✓</button>`:''}
         <button class="rib" data-edit="${s.id}" title="Редактировать">✏</button>
         <button class="rib del" data-del="${s.id}" title="Удалить">✕</button>
       </div></td>
@@ -1398,7 +1438,16 @@ document.getElementById('stBody').addEventListener('click',e=>{
   const cy=e.target.closest('[data-cyc]');
   if(cy){
     const s=S.students.find(s=>s.id===cy.dataset.cyc);
-    if(s){s.status=s.status==='active'?'vacation':'active';save();renderSts();renderBal();}
+    if(s){
+      if(s.status==='finished') s.status='active';
+      else s.status=s.status==='active'?'vacation':'active';
+      save();renderSts();renderBal();
+    }
+  }
+  const fin=e.target.closest('[data-fin]');
+  if(fin){
+    const s=S.students.find(s=>s.id===fin.dataset.fin);
+    if(s){s.status='finished';save();renderSts();renderBal();}
   }
 });
 
