@@ -425,6 +425,25 @@ input,select{font:inherit}
   </div>
 </div>
 
+<!-- Modal: Week -->
+<div class="mbg hide" id="mWeek">
+  <div class="modal" style="max-width:340px">
+    <div class="mhdr"><h2>Новая неделя</h2><button class="mcls" data-close="mWeek">×</button></div>
+    <div class="mbody">
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <button class="btn-ghost" id="btnPickThisWk" style="flex:1">Эта неделя</button>
+        <button class="btn-ghost" id="btnPickNextWk" style="flex:1">Следующая →</button>
+      </div>
+      <div class="fg" style="margin-top:8px"><label>Или выберите любой день</label><input class="fi" id="fWkDate" type="date"></div>
+      <div class="lprev" id="wkPreview" style="text-align:center;font-size:15px;font-weight:800;padding:12px"></div>
+    </div>
+    <div class="mftr">
+      <button class="btn-ghost" data-close="mWeek">Отмена</button>
+      <button class="btn-pri" id="btnSaveWk">Добавить неделю</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -476,6 +495,21 @@ const DEF_LESSONS = {
   s13:[{tid:'t8',ltid:'l82',n:2}],
 };
 
+/* ── WEEK HELPERS ─────────────────────────────── */
+function getMonday(d) {
+  const date=new Date(d||Date.now()); date.setHours(12,0,0,0);
+  const day=date.getDay();
+  date.setDate(date.getDate()+(day===0?-6:1-day));
+  return date;
+}
+function weekLabel(monday) {
+  const sun=new Date(monday); sun.setDate(sun.getDate()+6);
+  const mo=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  if(monday.getMonth()===sun.getMonth()) return `${monday.getDate()}–${sun.getDate()} ${mo[monday.getMonth()]}`;
+  return `${monday.getDate()} ${mo[monday.getMonth()]} – ${sun.getDate()} ${mo[sun.getMonth()]}`;
+}
+function toISODate(d) { return new Date(d).toISOString().slice(0,10); }
+
 /* ── STATE ────────────────────────────────────── */
 let S = {teachers:[], students:[], weeks:{}, curWk:null, theme:'', sync:{token:'',gistId:'',lastSync:''}};
 
@@ -492,10 +526,20 @@ function loadS() {
 }
 
 function initS() {
-  const wid = 'w'+Date.now();
+  const monday=getMonday(); const wid='w'+Date.now();
   S = { teachers:TEACHERS, students:DEF_STUDENTS,
-    weeks:{[wid]:{id:wid,label:'15–21 июня',startBal:0,lessons:DEF_LESSONS}},
+    weeks:{[wid]:{id:wid,label:weekLabel(monday),startDate:toISODate(monday),startBal:0,lessons:DEF_LESSONS,stBal:{}}},
     curWk:wid, theme:'', sync:{token:'',gistId:'',lastSync:''} };
+}
+
+function autoSelectCurrentWeek() {
+  const today=toISODate(new Date());
+  const found=Object.values(S.weeks).find(w=>{
+    if(!w.startDate) return false;
+    const sun=new Date(w.startDate+'T12:00:00'); sun.setDate(sun.getDate()+6);
+    return w.startDate<=today && today<=toISODate(sun);
+  });
+  if(found) S.curWk=found.id;
 }
 
 function saveLocal() { localStorage.setItem('uc-v3', JSON.stringify(S)); }
@@ -555,7 +599,7 @@ async function autoLoadOnStartup() {
     S.weeks = data.weeks || {};
     S.curWk = data.curWk || Object.keys(S.weeks)[0] || null;
     S.sync.lastSync = new Date().toISOString();
-    saveLocal(); render(); setSyncDot('ok');
+    autoSelectCurrentWeek(); saveLocal(); render(); setSyncDot('ok');
   } catch { setSyncDot('err'); }
 }
 const wk = () => S.weeks[S.curWk] || null;
@@ -1080,20 +1124,41 @@ async function loadFromGist() {
 
 /* ── WEEKS ────────────────────────────────────── */
 function addWk() {
-  const label=prompt('Период недели (например: 22–28 июня):');
-  if(!label) return;
+  document.getElementById('fWkDate').value=toISODate(getMonday());
+  updateWkPreview();
+  openM('mWeek');
+}
+
+function updateWkPreview() {
+  const v=document.getElementById('fWkDate').value;
+  const el=document.getElementById('wkPreview');
+  if(!v){el.textContent='';return;}
+  el.textContent=weekLabel(getMonday(new Date(v+'T12:00:00')));
+}
+
+function setWkDateTo(monday) {
+  document.getElementById('fWkDate').value=toISODate(monday);
+  updateWkPreview();
+}
+
+function saveWk() {
+  const v=document.getElementById('fWkDate').value; if(!v) return;
+  const monday=getMonday(new Date(v+'T12:00:00'));
+  const startDate=toISODate(monday);
+  const label=weekLabel(monday);
+  const existing=Object.values(S.weeks).find(w=>w.startDate===startDate);
+  if(existing){S.curWk=existing.id;save();render();closeM('mWeek');return;}
   const wid='w'+Date.now();
-  const prevW=wk();
-  const stBal={};
-  if(prevW) {
-    S.students.forEach(s => {
+  const prevW=wk(); const stBal={};
+  if(prevW){
+    S.students.forEach(s=>{
       const sb=prevW.stBal?.[s.id]||{};
       const balEnd=(sb.balStart||0)+(sb.income||0)-calcSt(s.id).rev;
       if(balEnd!==0) stBal[s.id]={balStart:balEnd,income:0};
     });
   }
-  S.weeks[wid]={id:wid,label:label.trim(),startBal:0,lessons:{},stBal};
-  S.curWk=wid; save(); render();
+  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:{},stBal};
+  S.curWk=wid; save(); render(); closeM('mWeek');
 }
 function navWk(dir) {
   const ids=Object.keys(S.weeks); const idx=ids.indexOf(S.curWk);
@@ -1144,8 +1209,14 @@ document.getElementById('fLRate').addEventListener('input',updatePrev);
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hide');}));
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');}
+  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');closeM('mTeacher');closeM('mWeek');}
 });
+document.getElementById('fWkDate').addEventListener('input',updateWkPreview);
+document.getElementById('btnPickThisWk').addEventListener('click',()=>setWkDateTo(getMonday()));
+document.getElementById('btnPickNextWk').addEventListener('click',()=>{
+  const mon=getMonday(); mon.setDate(mon.getDate()+7); setWkDateTo(mon);
+});
+document.getElementById('btnSaveWk').addEventListener('click',saveWk);
 document.getElementById('btnAddTch').addEventListener('click',openAddTeacher);
 document.getElementById('btnSaveTch').addEventListener('click',saveTeacher);
 document.getElementById('btnDelTch').addEventListener('click',deleteTeacher);
@@ -1203,6 +1274,7 @@ document.getElementById('stBody').addEventListener('change',e=>{
 
 /* ── INIT ─────────────────────────────────────── */
 loadS();
+autoSelectCurrentWeek();
 if(S.sync?.gistId) setSyncDot(S.sync?.token ? 'ok' : 'off');
 render();
 autoLoadOnStartup();
