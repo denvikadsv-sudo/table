@@ -226,10 +226,11 @@ input,select{font:inherit}
     <button class="wbtn" id="btnNext">&#8250;</button>
     <button class="wbtn hdr-icon" id="btnAddWk" title="Новая неделя" style="font-size:18px">+</button>
   </div>
-  <button class="hdr-icon" id="btnSync" title="Синхронизация">
+  <button class="hdr-icon" id="btnSync" title="Загрузить данные с сервера">
     <span id="syncIcon">⟳</span>
     <span class="sync-dot hide" id="syncDot"></span>
   </button>
+  <button class="hdr-icon" id="btnSyncSettings" title="Настройки синхронизации" style="font-size:13px">⚙</button>
   <button class="hdr-icon" id="btnTheme" title="Сменить тему">◑</button>
 </header>
 
@@ -275,6 +276,10 @@ input,select{font:inherit}
       <button class="btn-pri" id="btnAddTch">+ Учитель</button>
     </div>
     <div class="tgrid" id="settTchGrid"></div>
+
+    <div style="margin-top:20px;margin-bottom:10px;font-size:15px;font-weight:800">Синхронизация</div>
+    <div class="scard" style="max-width:480px" id="syncCard">
+    </div>
   </div>
 </div>
 
@@ -393,9 +398,13 @@ input,select{font:inherit}
         </div>
       </div>
 
+      <div style="background:var(--amb-bg);border:1px solid var(--amb);border-radius:var(--r-sm);padding:10px 13px;font-size:12px;color:var(--amb);line-height:1.5">
+        <strong>Важно:</strong> токен нужно ввести на каждом устройстве отдельно — он хранится только в браузере этого устройства. На каждом новом телефоне или компьютере: введите тот же токен + Gist ID → нажмите «⬇ Загрузить данные».
+      </div>
+
       <div class="sync-actions">
-        <button class="btn-pri" id="btnSaveGist">⬆ Сохранить (первый раз)</button>
-        <button class="btn-ghost" id="btnLoadGist">⬇ Загрузить (другое устройство)</button>
+        <button class="btn-ghost" id="btnSaveGist">⬆ Отправить на сервер</button>
+        <button class="btn-pri" id="btnLoadGist">⬇ Загрузить данные</button>
       </div>
 
       <div class="sync-status" id="syncStatus"></div>
@@ -704,6 +713,37 @@ function renderTch() {
     html+=`</div>`;
   });
   document.getElementById('tchGrid').innerHTML=html;
+}
+
+function renderSyncCard() {
+  const card=document.getElementById('syncCard');
+  if(!card) return;
+  const tok=S.sync?.token; const gid=S.sync?.gistId; const last=S.sync?.lastSync;
+  if(tok&&gid) {
+    card.innerHTML=`
+      <div class="scard-hdr" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--bd2)">
+        <span class="scard-name">Настроено</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;margin-left:6px"></span>
+      </div>
+      <div class="srow" style="margin-bottom:10px"><span style="color:var(--txt3);font-size:12px">Gist ID</span><span style="font-family:monospace;font-size:12px">${gid.slice(0,12)}…</span></div>
+      ${last?`<div style="font-size:11px;color:var(--txt3);margin-bottom:14px">Последняя загрузка: ${new Date(last).toLocaleString('ru-RU')}</div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-pri" id="scBtnPull">⬇ Загрузить данные с сервера</button>
+        <button class="btn-ghost" id="scBtnSettings">⚙ Изменить настройки</button>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--txt3);line-height:1.6">
+        На каждом устройстве токен вводится отдельно. Данные хранятся в GitHub Gist и загружаются при открытии страницы. Нажмите «⬇ Загрузить» чтобы получить свежие данные в любой момент.
+      </div>`;
+    document.getElementById('scBtnPull').addEventListener('click',()=>{autoLoadOnStartup();});
+    document.getElementById('scBtnSettings').addEventListener('click',openSyncModal);
+  } else {
+    card.innerHTML=`
+      <div style="font-size:13px;color:var(--txt2);margin-bottom:12px;line-height:1.6">
+        Синхронизация не настроена. Настройте её чтобы данные были одинаковы на всех устройствах.
+      </div>
+      <button class="btn-pri" id="scBtnSetup">Настроить синхронизацию</button>`;
+    document.getElementById('scBtnSetup').addEventListener('click',openSyncModal);
+  }
 }
 
 function renderSettings() {
@@ -1049,7 +1089,7 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
   });
   if(btn.dataset.tab==='summary') renderSum();
   if(btn.dataset.tab==='teachers') renderTch();
-  if(btn.dataset.tab==='settings') renderSettings();
+  if(btn.dataset.tab==='settings') { renderSettings(); renderSyncCard(); }
 }));
 
 document.getElementById('wkSel').addEventListener('change',e=>{S.curWk=e.target.value;save();render();});
@@ -1064,7 +1104,11 @@ document.getElementById('btnTheme').addEventListener('click',()=>{
   const next=cur==='dark'?'light':cur==='light'?'':'dark';
   S.theme=next; document.documentElement.setAttribute('data-theme',next); save();
 });
-document.getElementById('btnSync').addEventListener('click',openSyncModal);
+document.getElementById('btnSync').addEventListener('click',()=>{
+  if(S.sync?.token&&S.sync?.gistId) autoLoadOnStartup();
+  else openSyncModal();
+});
+document.getElementById('btnSyncSettings').addEventListener('click',openSyncModal);
 document.getElementById('btnSaveToken').addEventListener('click',saveToken);
 document.getElementById('btnSaveGist').addEventListener('click',saveToGist);
 document.getElementById('btnLoadGist').addEventListener('click',loadFromGist);
