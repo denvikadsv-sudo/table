@@ -637,6 +637,30 @@ function calcT() {
   return res;
 }
 
+/* ── BALANCE HELPERS ──────────────────────────── */
+function getPrevWkId(wid) {
+  const ids=sortedWkIds(); const idx=ids.indexOf(wid);
+  return idx>0 ? ids[idx-1] : null;
+}
+function getStLessonCost(sid, wid) {
+  const w=S.weeks[wid]; if(!w) return 0;
+  let cost=0;
+  (w.lessons?.[sid]||[]).forEach(l=>{ cost+=lp(l)*l.n; });
+  return cost;
+}
+function getBalEnd(sid, wid) {
+  const w=S.weeks[wid]; if(!w) return 0;
+  const prevId=getPrevWkId(wid);
+  const balStart=prevId ? getBalEnd(sid,prevId) : (w.stBal?.[sid]?.balStart||0);
+  const income=w.stBal?.[sid]?.income||0;
+  return balStart+income-getStLessonCost(sid,wid);
+}
+function getBalStart(sid, wid) {
+  const prevId=getPrevWkId(wid);
+  if(!prevId) return S.weeks[wid]?.stBal?.[sid]?.balStart||0;
+  return getBalEnd(sid,prevId);
+}
+
 /* ── RENDER ───────────────────────────────────── */
 function renderWkSel() {
   const sel=document.getElementById('wkSel');
@@ -664,10 +688,10 @@ function renderSts() {
   S.students.forEach(s => {
     const ls=w?.lessons?.[s.id]||[];
     const c=calcSt(s.id);
-    const sb=w?.stBal?.[s.id]||{};
-    const balStart=sb.balStart||0;
-    const income=sb.income||0;
-    const balEnd=balStart+income-c.rev;
+    const prevWkId=getPrevWkId(S.curWk);
+    const income=w?.stBal?.[s.id]?.income||0;
+    const balStart=getBalStart(s.id,S.curWk);
+    const balEnd=getBalEnd(s.id,S.curWk);
     totBs+=balStart; totInc+=income; totEnd+=balEnd;
     const bCls=s.status==='active'?'badge-on':'badge-vac';
     const bTxt=s.status==='active'?'Учащийся':'Каникулы';
@@ -691,7 +715,7 @@ function renderSts() {
       <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
-      <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number"></td>
+      <td class="r">${prevWkId?`<span class="mn" style="color:var(--txt2)">${balStart!==0?rub(balStart):'—'}</span>`:`<input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number">`}</td>
       <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="income" value="${income||''}" placeholder="0 ₽" type="number"></td>
       <td class="r mn ${endCls}">${balEnd!==0?rub(balEnd):'—'}</td>
       <td><div class="racts">
@@ -1155,15 +1179,7 @@ function saveWk() {
   const existing=Object.values(S.weeks).find(w=>w.startDate===startDate);
   if(existing){S.curWk=existing.id;save();render();closeM('mWeek');return;}
   const wid='w'+Date.now();
-  const prevW=wk(); const stBal={};
-  if(prevW){
-    S.students.forEach(s=>{
-      const sb=prevW.stBal?.[s.id]||{};
-      const balEnd=(sb.balStart||0)+(sb.income||0)-calcSt(s.id).rev;
-      if(balEnd!==0) stBal[s.id]={balStart:balEnd,income:0};
-    });
-  }
-  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:{},stBal};
+  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:{},stBal:{}};
   S.curWk=wid; save(); render(); closeM('mWeek');
 }
 function navWk(dir) {
@@ -1272,6 +1288,7 @@ document.getElementById('stBody').addEventListener('change',e=>{
   const sid=inp.dataset.balSid; const field=inp.dataset.balField;
   const val=parseFloat(inp.value)||0;
   const w=wk(); if(!w) return;
+  if(field==='balStart' && getPrevWkId(S.curWk)) return;
   if(!w.stBal) w.stBal={};
   if(!w.stBal[sid]) w.stBal[sid]={balStart:0,income:0};
   w.stBal[sid][field]=val;
