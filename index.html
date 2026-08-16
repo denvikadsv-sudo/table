@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Учебный центр</title>
+<style>
+:root {
+  --bg:#EDF1F7;--surf:#FFF;--surf2:#F4F7FB;--bd:#D4DCE8;--bd2:#E8ECF3;
+  --txt:#0E1D2E;--txt2:#4A6380;--txt3:#8BA3BB;
+  --acc:#1B5FCA;--acc-bg:#E6EEFB;
+  --grn:#15803D;--grn-bg:#DCFCE7;
+  --red:#C41E1E;--red-bg:#FEEAEA;
+  --amb:#B45309;--amb-bg:#FEF3C7;
+  --hdr:#0E1D2E;
+  --sh:0 1px 3px rgba(14,29,46,.07),0 4px 16px rgba(14,29,46,.06);
+  --sh-sm:0 1px 2px rgba(14,29,46,.08);
+  --r:8px;--r-sm:5px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080F1A;--surf:#101D2E;--surf2:#162540;--bd:#1E3050;--bd2:#172540;
+  --txt:#CBD8E8;--txt2:#6888A8;--txt3:#3A5A7A;
+  --acc:#4D8FFF;--acc-bg:#0D1F3C;
+  --grn:#34D399;--grn-bg:#052015;
+  --red:#F87171;--red-bg:#1F0808;
+  --amb:#FBB042;--amb-bg:#1A1000;
+  --hdr:#060D18;
+  --sh:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+  --sh-sm:0 1px 2px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#080F1A;--surf:#101D2E;--surf2:#162540;--bd:#1E3050;--bd2:#172540;
+  --txt:#CBD8E8;--txt2:#6888A8;--txt3:#3A5A7A;
+  --acc:#4D8FFF;--acc-bg:#0D1F3C;
+  --grn:#34D399;--grn-bg:#052015;
+  --red:#F87171;--red-bg:#1F0808;
+  --amb:#FBB042;--amb-bg:#1A1000;
+  --hdr:#060D18;
+  --sh:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+  --sh-sm:0 1px 2px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100%}
+button{font:inherit;cursor:pointer;border:none;background:none}
+input,select{font:inherit}
+
+/* HEADER */
+.hdr{background:var(--hdr);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.logo{width:30px;height:30px;border-radius:7px;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;flex-shrink:0}
+.site-name{color:rgba(255,255,255,.85);font-size:14px;font-weight:700;margin-right:auto}
+.week-nav{display:flex;align-items:center;gap:5px}
+.wbtn{width:26px;height:26px;border-radius:var(--r-sm);color:rgba(255,255,255,.65);font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .13s,color .13s}
+.wbtn:hover{background:rgba(255,255,255,.12);color:#fff}
+.wsel{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--r-sm);padding:5px 10px;font-size:13px;font-weight:500;cursor:pointer;outline:none;max-width:180px}
+.wsel option{background:#1a2a40}
+.hdr-icon{width:30px;height:30px;border-radius:var(--r-sm);color:rgba(255,255,255,.6);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .13s}
+.hdr-icon:hover{background:rgba(255,255,255,.12);color:#fff}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);position:absolute;top:4px;right:4px}
+.hdr-icon{position:relative}
+
+/* SUMMARY BAR */
+.sbar{background:var(--surf);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;box-shadow:var(--sh-sm)}
+.sitem{display:flex;flex-direction:column;padding:11px 20px;border-right:1px solid var(--bd2);min-width:110px}
+.sitem:first-child{padding-left:20px}
+.sitem:last-child{border-right:none}
+.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:1px}
+.sval{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);white-space:nowrap}
+.sval.grn{color:var(--grn)}.sval.red{color:var(--red)}.sval.acc{color:var(--acc)}
+.sbal-input{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);background:transparent;border:none;outline:none;width:140px}
+.sbal-input::placeholder{color:var(--txt3);font-weight:400;font-size:14px}
+.sbal-input:focus{color:var(--acc)}
+
+/* CONTENT */
+.main{padding:16px 20px;max-width:1440px;margin:0 auto}
+
+/* TABS */
+.tabs{display:flex;align-items:center;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--bd)}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;color:var(--txt2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .13s}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.tabs-gap{flex:1}
+.btn-pri{background:var(--acc);color:#fff;padding:7px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:700;transition:opacity .13s;display:inline-flex;align-items:center;gap:6px}
+.btn-pri:hover{opacity:.88}
+.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{color:var(--txt2);padding:7px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:600;border:1px solid var(--bd);transition:background .13s;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{background:var(--surf2)}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+.btn-link{color:var(--acc);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.btn-link:hover{text-decoration:underline}
+
+/* TABLE */
+.twrap{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.tscroll{overflow-x:auto}
+.mt{width:100%;border-collapse:collapse}
+.mt th{background:var(--surf2);padding:8px 12px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);border-bottom:1px solid var(--bd);white-space:nowrap}
+.mt th.r,.mt td.r{text-align:right}
+.mt td{padding:9px 12px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.mt tbody tr:last-child td{border-bottom:none}
+.mt tbody tr:hover td{background:var(--surf2)}
+.mt tfoot td{padding:10px 12px;border-top:2px solid var(--bd);font-weight:800;font-variant-numeric:tabular-nums;background:var(--surf2)}
+.col-num{width:32px}.col-cls{width:50px}.col-name{min-width:130px}.col-st{width:100px}.col-act{width:60px}.col-money{width:95px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;user-select:none;transition:opacity .13s}
+.badge:hover{opacity:.75}
+.badge-on{background:var(--grn-bg);color:var(--grn)}
+.badge-vac{background:var(--amb-bg);color:var(--amb)}
+
+/* LESSON TAGS */
+.lcell{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:26px}
+.ltag{display:inline-flex;align-items:center;gap:4px;padding:3px 7px 3px 9px;border-radius:6px;font-size:12px;background:var(--surf2);border:1px solid var(--bd2);color:var(--txt);white-space:nowrap}
+.ldot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ltag-name{font-weight:700}.ltag-info{color:var(--txt2)}.ltag-amt{font-variant-numeric:tabular-nums;color:var(--grn);font-weight:700;margin-left:2px}
+.ltag-rm{width:15px;height:15px;border-radius:50%;color:var(--txt3);font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;margin-left:1px;transition:background .1s,color .1s}
+.ltag-rm:hover{background:var(--red-bg);color:var(--red)}
+.add-l-btn{padding:3px 9px;border:1px dashed var(--bd);border-radius:6px;font-size:12px;color:var(--txt3);transition:all .12s;white-space:nowrap}
+.add-l-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+
+/* MONEY */
+.mn{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mn-g{color:var(--grn);font-weight:700}.mn-r{color:var(--red);font-weight:700}.mn-a{color:var(--acc);font-weight:800}.mn-d{color:var(--txt3)}
+
+/* ROW ACTIONS */
+.racts{display:flex;gap:3px}
+.rib{width:26px;height:26px;border-radius:var(--r-sm);color:var(--txt3);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.rib:hover{background:var(--surf2);color:var(--txt)}
+.rib.del:hover{background:var(--red-bg);color:var(--red)}
+
+/* SUMMARY GRID */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.scard{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;box-shadow:var(--sh-sm)}
+.scard-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--bd2)}
+.scard-name{font-weight:800;font-size:14px}.scard-sub{font-size:11px;color:var(--txt3)}
+.srow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:13px;color:var(--txt2);border-bottom:1px solid var(--bd2)}
+.srow:last-child{border-bottom:none}
+.srow.tot{font-weight:800;color:var(--txt);border-top:1px solid var(--bd);border-bottom:none;margin-top:4px;padding-top:10px}
+.srval{font-variant-numeric:tabular-nums;font-weight:700}
+
+/* TEACHERS GRID */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tcard{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm)}
+.tcard-hdr{padding:12px 16px;border-bottom:1px solid var(--bd2);display:flex;align-items:center;gap:10px}
+.tstripe{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.tcard-hdr h3{font-size:13px;font-weight:800}
+.tcard-hdr p{font-size:11px;color:var(--txt3)}
+.rrow{display:grid;grid-template-columns:1fr 80px 80px 80px;gap:0;padding:7px 16px;border-bottom:1px solid var(--bd2);font-size:12px;align-items:center}
+.rrow:last-child{border-bottom:none}
+.rrow.rhdr{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);padding-top:6px;padding-bottom:6px}
+.rrow .r{text-align:right;font-variant-numeric:tabular-nums}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(8,15,26,.72);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;backdrop-filter:blur(3px)}
+.mbg.hide{display:none}
+.modal{background:var(--surf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,.22);overflow:hidden}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd)}
+.mhdr h2{font-size:15px;font-weight:800}
+.mcls{width:26px;height:26px;border-radius:var(--r-sm);color:var(--txt3);font-size:17px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.mcls:hover{background:var(--surf2);color:var(--txt)}
+.mbody{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.mftr{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em}
+.fi{padding:9px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:var(--r-sm);color:var(--txt);font-size:14px;outline:none;transition:border-color .14s;width:100%}
+.fi:focus{border-color:var(--acc)}
+.frow{display:flex;gap:10px}
+.frow .fg{flex:1}
+.frow .fg.w80{flex:0 0 80px}
+.frow .fg.w120{flex:0 0 120px}
+.lprev{background:var(--surf2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:11px 13px;font-size:13px;color:var(--txt2);line-height:1.8;min-height:52px}
+.lprev strong{color:var(--txt)}
+
+/* SYNC MODAL STYLES */
+.sync-step{display:flex;gap:12px;align-items:flex-start}
+.sync-step-num{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.sync-step-body{flex:1;display:flex;flex-direction:column;gap:6px}
+.sync-step-title{font-size:13px;font-weight:700;color:var(--txt)}
+.sync-step-desc{font-size:12px;color:var(--txt3);line-height:1.5}
+.sync-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sync-status{padding:9px 12px;border-radius:var(--r-sm);font-size:13px;font-weight:600;display:none;align-items:center;gap:6px}
+.sync-status.ok{background:var(--grn-bg);color:var(--grn);display:flex}
+.sync-status.err{background:var(--red-bg);color:var(--red);display:flex}
+.sync-status.loading{background:var(--acc-bg);color:var(--acc);display:flex}
+.gist-id-row{display:flex;gap:6px;align-items:center}
+.gist-id-row .fi{flex:1;font-family:monospace;font-size:13px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--hdr);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:transform .25s,opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* UTILS */
+.hide{display:none!important}
+.empty-msg td{text-align:center;padding:32px;color:var(--txt3);font-size:13px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){
+  .hdr{padding:0 12px}
+  .main{padding:10px 12px}
+  .site-name{display:none}
+  .sitem{padding:9px 12px;min-width:90px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">УЦ</div>
+  <span class="site-name">Учебный центр</span>
+  <div class="week-nav">
+    <button class="wbtn" id="btnPrev">&#8249;</button>
+    <select class="wsel" id="wkSel"></select>
+    <button class="wbtn" id="btnNext">&#8250;</button>
+    <button class="wbtn hdr-icon" id="btnAddWk" title="Новая неделя" style="font-size:18px">+</button>
+  </div>
+  <button class="hdr-icon" id="btnSync" title="Синхронизация">
+    <span id="syncIcon">⟳</span>
+    <span class="sync-dot hide" id="syncDot"></span>
+  </button>
+  <button class="hdr-icon" id="btnTheme" title="Сменить тему">◑</button>
+</header>
+
+<div class="sbar">
+  <div class="sitem"><div class="slbl">Баланс нач.</div><input class="sbal-input" id="startBal" type="number" placeholder="0 ₽"></div>
+  <div class="sitem"><div class="slbl">Приход</div><div class="sval grn" id="sRev">—</div></div>
+  <div class="sitem"><div class="slbl">Учителям</div><div class="sval red" id="sCost">—</div></div>
+  <div class="sitem"><div class="slbl">Прибыль центра</div><div class="sval acc" id="sProfit">—</div></div>
+  <div class="sitem"><div class="slbl">Баланс кон.</div><div class="sval" id="sEnd">—</div></div>
+</div>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab on" data-tab="students">Ученики</button>
+    <button class="tab" data-tab="summary">Итоги</button>
+    <button class="tab" data-tab="teachers">Учителя</button>
+    <div class="tabs-gap"></div>
+    <button class="btn-pri" id="btnAddSt">+ Ученик</button>
+  </div>
+
+  <div id="tab-students">
+    <div class="twrap"><div class="tscroll">
+      <table class="mt">
+        <thead><tr>
+          <th class="col-num">#</th><th class="col-cls">Кл.</th>
+          <th class="col-name">Имя ученика</th><th class="col-st">Статус</th>
+          <th>Уроки недели</th>
+          <th class="col-money r">Приход</th><th class="col-money r">Учителю</th>
+          <th class="col-money r">Прибыль</th><th class="col-act"></th>
+        </tr></thead>
+        <tbody id="stBody"></tbody>
+        <tfoot id="stFoot"></tfoot>
+      </table>
+    </div></div>
+  </div>
+
+  <div id="tab-summary" class="hide"><div class="sgrid" id="sumGrid"></div></div>
+  <div id="tab-teachers" class="hide"><div class="tgrid" id="tchGrid"></div></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal: Student -->
+<div class="mbg hide" id="mStudent">
+  <div class="modal">
+    <div class="mhdr"><h2 id="mStTitle">Новый ученик</h2><button class="mcls" data-close="mStudent">×</button></div>
+    <div class="mbody">
+      <div class="frow">
+        <div class="fg w80"><label>Класс</label><input class="fi" id="fCls" placeholder="7А"></div>
+        <div class="fg"><label>Имя ученика</label><input class="fi" id="fName" placeholder="Иван Иванов"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Группа (необяз.)</label><input class="fi" id="fGroup" placeholder="Ученики Елены"></div>
+        <div class="fg w120"><label>Статус</label>
+          <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="vacation">Каникулы</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="mftr"><button class="btn-ghost" data-close="mStudent">Отмена</button><button class="btn-pri" id="btnSaveSt">Сохранить</button></div>
+  </div>
+</div>
+
+<!-- Modal: Lesson -->
+<div class="mbg hide" id="mLesson">
+  <div class="modal">
+    <div class="mhdr"><h2>Добавить урок</h2><button class="mcls" data-close="mLesson">×</button></div>
+    <div class="mbody">
+      <div class="fg"><label>Учитель</label><select class="fi" id="fTeacher"></select></div>
+      <div class="fg"><label>Тип урока</label><select class="fi" id="fLType"></select></div>
+      <div class="fg"><label>Количество уроков</label><input class="fi" id="fCount" type="number" value="1" min="1" max="20" style="width:100px"></div>
+      <div class="lprev" id="lPrev">Выберите учителя и тип урока</div>
+    </div>
+    <div class="mftr"><button class="btn-ghost" data-close="mLesson">Отмена</button><button class="btn-pri" id="btnSaveL">Добавить</button></div>
+  </div>
+</div>
+
+<!-- Modal: Sync -->
+<div class="mbg hide" id="mSync">
+  <div class="modal" style="max-width:500px">
+    <div class="mhdr">
+      <h2>Синхронизация через GitHub</h2>
+      <button class="mcls" data-close="mSync">×</button>
+    </div>
+    <div class="mbody">
+
+      <div class="sync-step">
+        <div class="sync-step-num">1</div>
+        <div class="sync-step-body">
+          <div class="sync-step-title">Создайте GitHub токен</div>
+          <div class="sync-step-desc">Нужен токен с правом <strong>gist</strong>. Нажмите ссылку — откроется форма с уже выставленными правами:</div>
+          <a class="btn-link" href="https://github.com/settings/tokens/new?scopes=gist&description=Учебный+центр" target="_blank" rel="noopener">
+            Открыть GitHub → Создать токен ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="sync-step">
+        <div class="sync-step-num">2</div>
+        <div class="sync-step-body">
+          <div class="sync-step-title">Вставьте токен</div>
+          <div class="fg" style="margin-top:4px">
+            <input class="fi" id="syncToken" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" autocomplete="off">
+          </div>
+          <div class="sync-step-desc" style="margin-top:2px">Токен хранится только в этом браузере — никуда не отправляется.</div>
+        </div>
+      </div>
+
+      <div class="sync-step">
+        <div class="sync-step-num">3</div>
+        <div class="sync-step-body">
+          <div class="sync-step-title">Сохраните или загрузите данные</div>
+          <div class="sync-step-desc">ID Gist сохраняется автоматически. На новом устройстве вставьте его вручную:</div>
+          <div class="gist-id-row" style="margin-top:6px">
+            <input class="fi" id="syncGistId" placeholder="ID Gist (заполнится после первого сохранения)" autocomplete="off">
+            <a class="btn-link" id="gistLink" href="#" target="_blank" rel="noopener" style="white-space:nowrap;display:none">Открыть ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="sync-actions">
+        <button class="btn-pri" id="btnSaveGist">⬆ Сохранить в Gist</button>
+        <button class="btn-ghost" id="btnLoadGist">⬇ Загрузить из Gist</button>
+      </div>
+
+      <div class="sync-status" id="syncStatus"></div>
+
+    </div>
+    <div class="mftr">
+      <div style="font-size:12px;color:var(--txt3)" id="lastSyncTime"></div>
+      <div style="flex:1"></div>
+      <button class="btn-ghost" data-close="mSync">Закрыть</button>
+      <button class="btn-pri" id="btnSaveToken">Сохранить токен</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const rub = n => n === 0 ? '0 ₽' : n.toLocaleString('ru-RU') + ' ₽';
+
+/* ── DEFAULT DATA ─────────────────────────────── */
+const TEACHERS = [
+  {id:'t1',name:'Светлана',full:'Игишева Светлана Ивановна',sub:'Начальные классы',col:'#2563EB',
+   types:[{id:'l11',dur:40,p:1500,r:1500},{id:'l12',dur:60,p:2250,r:2250},{id:'l13',dur:40,p:1700,r:1700},{id:'l14',dur:60,p:2500,r:2500}]},
+  {id:'t2',name:'Юлия',full:'Прохорова Юлия Петровна',sub:'Начальные классы',col:'#059669',
+   types:[{id:'l21',dur:40,p:1200,r:650},{id:'l22',dur:60,p:1700,r:1000},{id:'l23',dur:40,p:1500,r:650},{id:'l24',dur:60,p:2250,r:1000}]},
+  {id:'t3',name:'Анастасия',full:'Дмитриенко Анастасия Михайловна',sub:'Математика',col:'#7C3AED',
+   types:[{id:'l31',dur:60,p:2500,r:2000}]},
+  {id:'t4',name:'Ирина',full:'Сундукова Ирина Валерьевна',sub:'Русский яз. (ОГЭ/ЕГЭ)',col:'#DC2626',
+   types:[{id:'l41',dur:60,p:1700,r:1000},{id:'l42',dur:60,p:2250,r:1200}]},
+  {id:'t5',name:'Елизавета',full:'Елизавета Владимировна',sub:'Биология, Химия',col:'#0891B2',
+   types:[{id:'l51',dur:40,p:1200,r:800},{id:'l52',dur:60,p:1700,r:1200}]},
+  {id:'t6',name:'Алена',full:'Алена Максимовна',sub:'Обществознание',col:'#D97706',
+   types:[{id:'l61',dur:60,p:1700,r:1000}]},
+  {id:'t7',name:'Доли',full:'Доли',sub:'Английский язык',col:'#0D9488',
+   types:[{id:'l71',dur:40,p:1500,r:1000},{id:'l72',dur:60,p:2250,r:1300}]},
+  {id:'t8',name:'Наталья',full:'Наталья Васильевна',sub:'Физика, Математика',col:'#E11D48',
+   types:[{id:'l81',dur:40,p:1200,r:650},{id:'l82',dur:60,p:1700,r:1000},{id:'l83',dur:40,p:1500,r:650},{id:'l84',dur:60,p:2250,r:1000}]},
+];
+
+const DEF_STUDENTS = [
+  {id:'s1',num:1,cls:'2, 6',name:'Каролина, Артем',status:'active',group:''},
+  {id:'s2',num:2,cls:'4',name:'Артур',status:'vacation',group:''},
+  {id:'s3',num:3,cls:'',name:'Коля',status:'active',group:''},
+  {id:'s4',num:4,cls:'7',name:'Семен',status:'vacation',group:''},
+  {id:'s5',num:5,cls:'5',name:'Аня',status:'vacation',group:''},
+  {id:'s6',num:6,cls:'',name:'Магинур',status:'active',group:''},
+  {id:'s7',num:7,cls:'',name:'',status:'active',group:''},
+  {id:'s8',num:8,cls:'',name:'Михаил Попов',status:'active',group:''},
+  {id:'s9',num:9,cls:'10',name:'Яна',status:'active',group:''},
+  {id:'s10',num:10,cls:'10',name:'Алла',status:'vacation',group:''},
+  {id:'s11',num:11,cls:'',name:'Михаил',status:'vacation',group:''},
+  {id:'s12',num:12,cls:'',name:'Федор',status:'vacation',group:''},
+  {id:'s13',num:13,cls:'11',name:'Скляров Иван',status:'active',group:'Ученики Татьяны'},
+];
+
+const DEF_LESSONS = {
+  s1:[{tid:'t1',ltid:'l11',n:4}],
+  s3:[{tid:'t1',ltid:'l14',n:1}],
+  s4:[{tid:'t1',ltid:'l11',n:3},{tid:'t3',ltid:'l31',n:2}],
+  s6:[{tid:'t3',ltid:'l31',n:2},{tid:'t4',ltid:'l41',n:2}],
+  s8:[{tid:'t4',ltid:'l41',n:2}],
+  s9:[{tid:'t5',ltid:'l52',n:2},{tid:'t3',ltid:'l31',n:2}],
+  s13:[{tid:'t8',ltid:'l82',n:2}],
+};
+
+/* ── STATE ────────────────────────────────────── */
+let S = {teachers:[], students:[], weeks:{}, curWk:null, theme:'', sync:{token:'',gistId:'',lastSync:''}};
+
+function loadS() {
+  try {
+    const saved = localStorage.getItem('uc-v3');
+    if (saved) {
+      S = JSON.parse(saved);
+      if (!S.teachers?.length) S.teachers = TEACHERS;
+      if (!S.sync) S.sync = {token:'',gistId:'',lastSync:''};
+    } else { initS(); }
+  } catch { initS(); }
+  document.documentElement.setAttribute('data-theme', S.theme || '');
+}
+
+function initS() {
+  const wid = 'w'+Date.now();
+  S = { teachers:TEACHERS, students:DEF_STUDENTS,
+    weeks:{[wid]:{id:wid,label:'15–21 июня',startBal:0,lessons:DEF_LESSONS}},
+    curWk:wid, theme:'', sync:{token:'',gistId:'',lastSync:''} };
+}
+
+const save = () => localStorage.setItem('uc-v3', JSON.stringify(S));
+const wk = () => S.weeks[S.curWk] || null;
+const getT = tid => S.teachers.find(t => t.id === tid);
+const getLT = (t, ltid) => t?.types.find(lt => lt.id === ltid);
+
+/* ── CALC ─────────────────────────────────────── */
+function calcSt(sid) {
+  const ls = wk()?.lessons?.[sid] || [];
+  let rev = 0, cost = 0;
+  ls.forEach(l => { const t=getT(l.tid); const lt=getLT(t,l.ltid); if(lt){rev+=lt.p*l.n;cost+=lt.r*l.n;} });
+  return {rev, cost, profit:rev-cost};
+}
+function calcWk() {
+  let rev=0, cost=0;
+  S.students.forEach(s => { const c=calcSt(s.id); rev+=c.rev; cost+=c.cost; });
+  return {rev, cost, profit:rev-cost};
+}
+function calcT() {
+  const res={};
+  S.students.forEach(s => {
+    (wk()?.lessons?.[s.id]||[]).forEach(l => {
+      if(!res[l.tid]) res[l.tid]={rev:0,cost:0,n:0};
+      const t=getT(l.tid); const lt=getLT(t,l.ltid);
+      if(lt){res[l.tid].rev+=lt.p*l.n;res[l.tid].cost+=lt.r*l.n;res[l.tid].n+=l.n;}
+    });
+  });
+  return res;
+}
+
+/* ── RENDER ───────────────────────────────────── */
+function renderWkSel() {
+  const sel = document.getElementById('wkSel');
+  sel.innerHTML = Object.values(S.weeks).map(w =>
+    `<option value="${w.id}"${w.id===S.curWk?' selected':''}>${esc(w.label)}</option>`).join('');
+}
+
+function renderBal() {
+  const w=wk(); const tot=calcWk(); const sb=w?.startBal||0;
+  document.getElementById('startBal').value = sb||'';
+  document.getElementById('sRev').textContent = rub(tot.rev);
+  document.getElementById('sCost').textContent = rub(tot.cost);
+  document.getElementById('sProfit').textContent = rub(tot.profit);
+  document.getElementById('sEnd').textContent = rub(sb+tot.rev);
+}
+
+function renderSts() {
+  const w=wk(); const body=document.getElementById('stBody'); const foot=document.getElementById('stFoot');
+  if (!S.students.length) {
+    body.innerHTML='<tr class="empty-msg"><td colspan="9">Учеников нет — нажмите «+ Ученик»</td></tr>';
+    foot.innerHTML=''; return;
+  }
+  let rows='';
+  S.students.forEach(s => {
+    const ls=w?.lessons?.[s.id]||[];
+    const c=calcSt(s.id);
+    const bCls=s.status==='active'?'badge-on':'badge-vac';
+    const bTxt=s.status==='active'?'Учащийся':'Каникулы';
+    let tags=ls.map(l => {
+      const t=getT(l.tid); const lt=getLT(t,l.ltid);
+      if(!t||!lt) return '';
+      return `<span class="ltag">
+        <span class="ldot" style="background:${t.col}"></span>
+        <span class="ltag-name">${esc(t.name)}</span>
+        <span class="ltag-info">${l.n}×${lt.dur}мин</span>
+        <span class="ltag-amt">${rub(lt.p*l.n)}</span>
+        <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${lt.id}">×</button>
+      </span>`;
+    }).join('');
+    tags += `<button class="add-l-btn" data-add-ls="${s.id}">+ урок</button>`;
+    const has=c.rev>0;
+    rows+=`<tr>
+      <td class="mn" style="color:var(--txt3)">${s.num}</td>
+      <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
+      <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
+      <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
+      <td><div class="lcell">${tags}</div></td>
+      <td class="r mn ${has?'mn-g':'mn-d'}">${has?rub(c.rev):'—'}</td>
+      <td class="r mn ${c.cost>0?'mn-r':'mn-d'}">${c.cost>0?rub(c.cost):'—'}</td>
+      <td class="r mn ${c.profit>0?'mn-a':c.profit<0?'mn-r':'mn-d'}">${has?rub(c.profit):'—'}</td>
+      <td><div class="racts">
+        <button class="rib" data-edit="${s.id}" title="Редактировать">✏</button>
+        <button class="rib del" data-del="${s.id}" title="Удалить">✕</button>
+      </div></td>
+    </tr>`;
+  });
+  body.innerHTML=rows;
+  const tot=calcWk();
+  foot.innerHTML=`<tr>
+    <td colspan="5" class="r" style="color:var(--txt3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Итого за неделю</td>
+    <td class="r mn mn-g">${rub(tot.rev)}</td>
+    <td class="r mn mn-r">${rub(tot.cost)}</td>
+    <td class="r mn mn-a">${rub(tot.profit)}</td>
+    <td></td>
+  </tr>`;
+}
+
+function renderSum() {
+  const w=wk(); const wt=calcWk(); const tt=calcT(); const sb=w?.startBal||0;
+  let html=`<div class="scard">
+    <div class="scard-hdr"><span class="scard-name">Итоги недели</span><span class="scard-sub">${esc(w?.label||'')}</span></div>
+    <div class="srow"><span>Баланс начало</span><span class="srval">${rub(sb)}</span></div>
+    <div class="srow"><span>Приход от учеников</span><span class="srval" style="color:var(--grn)">${rub(wt.rev)}</span></div>
+    <div class="srow"><span>Выплаты учителям</span><span class="srval" style="color:var(--red)">${rub(wt.cost)}</span></div>
+    <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(wt.profit)}</span></div>
+    <div class="srow tot"><span>Баланс конец</span><span class="srval">${rub(sb+wt.rev)}</span></div>
+  </div>`;
+  S.teachers.forEach(t => {
+    const tc=tt[t.id]; if(!tc) return;
+    html+=`<div class="scard">
+      <div class="scard-hdr">
+        <span class="ldot" style="background:${t.col};width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
+        <span class="scard-name">${esc(t.name)}</span><span class="scard-sub">${esc(t.sub)}</span>
+      </div>
+      <div class="srow"><span>Уроков</span><span class="srval">${tc.n}</span></div>
+      <div class="srow"><span>Приход</span><span class="srval" style="color:var(--grn)">${rub(tc.rev)}</span></div>
+      <div class="srow"><span>Выплата</span><span class="srval" style="color:var(--red)">${rub(tc.cost)}</span></div>
+      <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(tc.rev-tc.cost)}</span></div>
+    </div>`;
+  });
+  document.getElementById('sumGrid').innerHTML=html;
+}
+
+function renderTch() {
+  let html='';
+  S.teachers.forEach(t => {
+    html+=`<div class="tcard">
+      <div class="tcard-hdr">
+        <div class="tstripe" style="background:${t.col}"></div>
+        <div><h3>${esc(t.full)}</h3><p>${esc(t.sub)}</p></div>
+      </div>
+      <div class="rrow rhdr"><span>Тип</span><span class="r">Клиент</span><span class="r">Учитель</span><span class="r">Прибыль</span></div>`;
+    t.types.forEach(lt => {
+      html+=`<div class="rrow">
+        <span style="color:var(--txt2)">${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽</span>
+        <span class="r" style="color:var(--grn)">${lt.p.toLocaleString('ru-RU')} ₽</span>
+        <span class="r" style="color:var(--red)">${lt.r.toLocaleString('ru-RU')} ₽</span>
+        <span class="r" style="color:var(--acc);font-weight:700">${(lt.p-lt.r).toLocaleString('ru-RU')} ₽</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('tchGrid').innerHTML=html;
+}
+
+function render() { renderWkSel(); renderBal(); renderSts(); }
+
+/* ── TOAST ────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+/* ── MODALS ───────────────────────────────────── */
+const openM = id => document.getElementById(id).classList.remove('hide');
+const closeM = id => document.getElementById(id).classList.add('hide');
+
+/* ── STUDENT MODAL ────────────────────────────── */
+let editSid=null;
+function openAddSt() {
+  editSid=null;
+  document.getElementById('mStTitle').textContent='Новый ученик';
+  ['fCls','fName','fGroup'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fStatus').value='active';
+  openM('mStudent'); setTimeout(()=>document.getElementById('fName').focus(),50);
+}
+function openEditSt(sid) {
+  const s=S.students.find(s=>s.id===sid); if(!s) return;
+  editSid=sid;
+  document.getElementById('mStTitle').textContent='Редактировать ученика';
+  document.getElementById('fCls').value=s.cls||'';
+  document.getElementById('fName').value=s.name||'';
+  document.getElementById('fGroup').value=s.group||'';
+  document.getElementById('fStatus').value=s.status||'active';
+  openM('mStudent');
+}
+function saveSt() {
+  const cls=document.getElementById('fCls').value.trim();
+  const name=document.getElementById('fName').value.trim();
+  const group=document.getElementById('fGroup').value.trim();
+  const status=document.getElementById('fStatus').value;
+  if(editSid){
+    const s=S.students.find(s=>s.id===editSid);
+    if(s){s.cls=cls;s.name=name;s.group=group;s.status=status;}
+  } else {
+    const maxN=S.students.reduce((m,s)=>Math.max(m,s.num||0),0);
+    S.students.push({id:'s'+Date.now(),num:maxN+1,cls,name,group,status});
+  }
+  save(); closeM('mStudent'); render();
+}
+
+/* ── LESSON MODAL ─────────────────────────────── */
+let lessSid=null;
+function fillTeacherSel() {
+  document.getElementById('fTeacher').innerHTML=
+    S.teachers.map(t=>`<option value="${t.id}">${esc(t.name)} — ${esc(t.sub)}</option>`).join('');
+  fillLTypeSel();
+}
+function fillLTypeSel() {
+  const t=getT(document.getElementById('fTeacher').value);
+  document.getElementById('fLType').innerHTML=t
+    ?t.types.map(lt=>`<option value="${lt.id}">${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽  (учителю: ${lt.r.toLocaleString('ru-RU')}₽)</option>`).join('')
+    :'';
+  updatePrev();
+}
+function updatePrev() {
+  const t=getT(document.getElementById('fTeacher').value);
+  const lt=getLT(t,document.getElementById('fLType').value);
+  const n=parseInt(document.getElementById('fCount').value)||0;
+  const el=document.getElementById('lPrev');
+  if(!t||!lt||n<1){el.textContent='Укажите учителя, тип и количество';return;}
+  const rv=lt.p*n,co=lt.r*n,pr=rv-co;
+  el.innerHTML=`<strong>${esc(t.name)}</strong> · ${n}×${lt.dur} мин · ${lt.p.toLocaleString('ru-RU')}₽<br>
+    Клиент: <strong style="color:var(--grn)">${rub(rv)}</strong> ·
+    Учителю: <strong style="color:var(--red)">${rub(co)}</strong> ·
+    Прибыль: <strong style="color:var(--acc)">${rub(pr)}</strong>`;
+}
+function openAddL(sid) {
+  lessSid=sid; fillTeacherSel();
+  document.getElementById('fCount').value=1;
+  openM('mLesson'); setTimeout(()=>document.getElementById('fCount').focus(),50);
+}
+function saveL() {
+  const tid=document.getElementById('fTeacher').value;
+  const ltid=document.getElementById('fLType').value;
+  const n=parseInt(document.getElementById('fCount').value)||0;
+  if(!tid||!ltid||n<1) return;
+  const w=wk(); if(!w) return;
+  if(!w.lessons) w.lessons={};
+  if(!w.lessons[lessSid]) w.lessons[lessSid]=[];
+  const ex=w.lessons[lessSid].find(l=>l.tid===tid&&l.ltid===ltid);
+  if(ex) ex.n+=n; else w.lessons[lessSid].push({tid,ltid,n});
+  save(); closeM('mLesson'); render();
+}
+function removeL(sid,tid,ltid) {
+  const w=wk(); if(!w?.lessons?.[sid]) return;
+  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&l.ltid===ltid));
+  save(); render();
+}
+
+/* ── SYNC (GITHUB GIST) ───────────────────────── */
+const GIST_FILE='uc-data.json';
+
+function openSyncModal() {
+  const tok=S.sync?.token||'';
+  const gid=S.sync?.gistId||'';
+  document.getElementById('syncToken').value=tok;
+  document.getElementById('syncGistId').value=gid;
+  updateGistLink(gid);
+  const last=S.sync?.lastSync;
+  const ts=document.getElementById('lastSyncTime');
+  ts.textContent=last?'Последняя синхронизация: '+new Date(last).toLocaleString('ru-RU'):'';
+  setSyncStatus('','');
+  openM('mSync');
+}
+
+function updateGistLink(gid) {
+  const link=document.getElementById('gistLink');
+  if(gid){link.href=`https://gist.github.com/${gid}`;link.style.display='inline-flex';}
+  else{link.style.display='none';}
+}
+
+function setSyncStatus(msg,type) {
+  const el=document.getElementById('syncStatus');
+  el.className='sync-status'+(type?' '+type:'');
+  el.innerHTML=msg;
+}
+
+function setSyncBusy(busy) {
+  const btnSave=document.getElementById('btnSaveGist');
+  const btnLoad=document.getElementById('btnLoadGist');
+  btnSave.disabled=busy; btnLoad.disabled=busy;
+  if(busy) setSyncStatus('<span class="spinner"></span> Подождите…','loading');
+}
+
+function saveToken() {
+  const tok=document.getElementById('syncToken').value.trim();
+  const gid=document.getElementById('syncGistId').value.trim();
+  if(!S.sync) S.sync={};
+  S.sync.token=tok;
+  if(gid) S.sync.gistId=gid;
+  save();
+  showToast('Токен сохранён');
+}
+
+async function saveToGist() {
+  const tok=(document.getElementById('syncToken').value.trim())||S.sync?.token;
+  if(!tok){setSyncStatus('Введите GitHub токен','err');return;}
+  setSyncBusy(true);
+  const content=JSON.stringify({teachers:S.teachers,students:S.students,weeks:S.weeks,curWk:S.curWk},null,2);
+  try {
+    const gid=S.sync?.gistId||document.getElementById('syncGistId').value.trim();
+    const url=gid?`https://api.github.com/gists/${gid}`:'https://api.github.com/gists';
+    const method=gid?'PATCH':'POST';
+    const resp=await fetch(url,{
+      method,
+      headers:{'Authorization':'token '+tok,'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
+      body:JSON.stringify({description:'Учебный центр — данные',public:false,files:{[GIST_FILE]:{content}}})
+    });
+    if(!resp.ok){const e=await resp.json();throw new Error(e.message||'HTTP '+resp.status);}
+    const gist=await resp.json();
+    if(!S.sync) S.sync={};
+    S.sync.token=tok; S.sync.gistId=gist.id; S.sync.lastSync=new Date().toISOString();
+    save();
+    document.getElementById('syncGistId').value=gist.id;
+    document.getElementById('lastSyncTime').textContent='Последняя синхронизация: '+new Date().toLocaleString('ru-RU');
+    updateGistLink(gist.id);
+    document.getElementById('syncDot').classList.remove('hide');
+    setSyncStatus('✓ Сохранено. ID: <strong>'+esc(gist.id)+'</strong> — скопируйте для других устройств','ok');
+  } catch(e) {
+    setSyncStatus('Ошибка: '+esc(e.message),'err');
+  } finally { setSyncBusy(false); }
+}
+
+async function loadFromGist() {
+  const tok=(document.getElementById('syncToken').value.trim())||S.sync?.token;
+  const gid=(document.getElementById('syncGistId').value.trim())||S.sync?.gistId;
+  if(!tok){setSyncStatus('Введите GitHub токен','err');return;}
+  if(!gid){setSyncStatus('Введите Gist ID','err');return;}
+  setSyncBusy(true);
+  try {
+    const resp=await fetch(`https://api.github.com/gists/${gid}`,{
+      headers:{'Authorization':'token '+tok,'X-GitHub-Api-Version':'2022-11-28'}
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const gist=await resp.json();
+    const raw=gist.files[GIST_FILE]?.content;
+    if(!raw) throw new Error('Файл '+GIST_FILE+' не найден в Gist');
+    const data=JSON.parse(raw);
+    S.teachers=data.teachers?.length?data.teachers:TEACHERS;
+    S.students=data.students||[];
+    S.weeks=data.weeks||{};
+    S.curWk=data.curWk||Object.keys(S.weeks)[0]||null;
+    if(!S.sync) S.sync={};
+    S.sync.token=tok; S.sync.gistId=gid; S.sync.lastSync=new Date().toISOString();
+    save(); render();
+    document.getElementById('lastSyncTime').textContent='Последняя синхронизация: '+new Date().toLocaleString('ru-RU');
+    document.getElementById('syncDot').classList.remove('hide');
+    setSyncStatus('✓ Данные загружены','ok');
+  } catch(e) {
+    setSyncStatus('Ошибка: '+esc(e.message),'err');
+  } finally { setSyncBusy(false); }
+}
+
+/* ── WEEKS ────────────────────────────────────── */
+function addWk() {
+  const label=prompt('Период недели (например: 22–28 июня):');
+  if(!label) return;
+  const wid='w'+Date.now();
+  S.weeks[wid]={id:wid,label:label.trim(),startBal:0,lessons:{}};
+  S.curWk=wid; save(); render();
+}
+function navWk(dir) {
+  const ids=Object.keys(S.weeks); const idx=ids.indexOf(S.curWk);
+  const ni=idx+dir; if(ni>=0&&ni<ids.length){S.curWk=ids[ni];save();render();}
+}
+
+/* ── EVENTS ───────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  ['students','summary','teachers'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('hide',t!==btn.dataset.tab);
+  });
+  if(btn.dataset.tab==='summary') renderSum();
+  if(btn.dataset.tab==='teachers') renderTch();
+}));
+
+document.getElementById('wkSel').addEventListener('change',e=>{S.curWk=e.target.value;save();render();});
+document.getElementById('btnPrev').addEventListener('click',()=>navWk(-1));
+document.getElementById('btnNext').addEventListener('click',()=>navWk(1));
+document.getElementById('btnAddWk').addEventListener('click',addWk);
+document.getElementById('startBal').addEventListener('change',e=>{
+  const w=wk(); if(w){w.startBal=parseFloat(e.target.value)||0;save();renderBal();}
+});
+document.getElementById('btnTheme').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next=cur==='dark'?'light':cur==='light'?'':'dark';
+  S.theme=next; document.documentElement.setAttribute('data-theme',next); save();
+});
+document.getElementById('btnSync').addEventListener('click',openSyncModal);
+document.getElementById('btnSaveToken').addEventListener('click',saveToken);
+document.getElementById('btnSaveGist').addEventListener('click',saveToGist);
+document.getElementById('btnLoadGist').addEventListener('click',loadFromGist);
+document.getElementById('btnAddSt').addEventListener('click',openAddSt);
+document.getElementById('btnSaveSt').addEventListener('click',saveSt);
+document.getElementById('btnSaveL').addEventListener('click',saveL);
+document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
+document.getElementById('fLType').addEventListener('change',updatePrev);
+document.getElementById('fCount').addEventListener('input',updatePrev);
+
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
+document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hide');}));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeM('mStudent');closeM('mLesson');closeM('mSync');}
+});
+
+document.getElementById('stBody').addEventListener('click',e=>{
+  const rm=e.target.closest('[data-rm-sid]');
+  if(rm){removeL(rm.dataset.rmSid,rm.dataset.rmTid,rm.dataset.rmLtid);return;}
+  const al=e.target.closest('[data-add-ls]');
+  if(al){openAddL(al.dataset.addLs);return;}
+  const ed=e.target.closest('[data-edit]');
+  if(ed){openEditSt(ed.dataset.edit);return;}
+  const dl=e.target.closest('[data-del]');
+  if(dl){
+    const s=S.students.find(s=>s.id===dl.dataset.del);
+    if(s&&confirm(`Удалить ученика «${s.name||'без имени'}»?`)){
+      S.students=S.students.filter(st=>st.id!==dl.dataset.del);
+      Object.values(S.weeks).forEach(w=>{if(w.lessons)delete w.lessons[dl.dataset.del];});
+      save(); render();
+    }
+    return;
+  }
+  const cy=e.target.closest('[data-cyc]');
+  if(cy){
+    const s=S.students.find(s=>s.id===cy.dataset.cyc);
+    if(s){s.status=s.status==='active'?'vacation':'active';save();renderSts();renderBal();}
+  }
+});
+
+/* ── INIT ─────────────────────────────────────── */
+loadS();
+if(S.sync?.gistId) document.getElementById('syncDot').classList.remove('hide');
+render();
+</script>
+</body>
+</html>
