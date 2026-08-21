@@ -190,9 +190,14 @@ input,select{font:inherit}
 .pay-btn.unpaid{background:var(--surf2);color:var(--txt3);border-color:var(--bd)}
 .pay-btn.unpaid:hover{background:var(--red-bg);color:var(--red);border-color:transparent}
 
-/* MINI COUNT SELECT */
-.fi-sm{padding:3px 6px;background:#f0f4fa;border:1px solid #c8d4e4;border-radius:var(--r-sm);color:#0E1D2E;font-size:13px;font-weight:700;outline:none;width:62px;cursor:pointer;transition:border-color .13s}
-.fi-sm:focus{border-color:#1B5FCA}
+/* MINI COUNT PICKER */
+.count-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 9px;background:#f0f4fa;border:1px solid #c8d4e4;border-radius:var(--r-sm);color:#0E1D2E;font-size:13px;font-weight:700;min-width:54px;cursor:pointer;transition:border-color .13s,box-shadow .13s}
+.count-btn:hover,.count-btn:focus{border-color:#1B5FCA;outline:none}
+.count-arr{font-size:8px;color:#8BA3BB}
+.count-picker{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #c8d4e4;border-radius:var(--r-sm);box-shadow:0 4px 20px rgba(14,29,46,.14);z-index:500;max-height:180px;overflow-y:auto;min-width:54px;overscroll-behavior:contain}
+.count-picker button{display:block;width:100%;padding:6px 12px;text-align:center;font-size:13px;font-weight:700;color:#0E1D2E;transition:background .09s;cursor:pointer;border:none;background:none}
+.count-picker button:hover{background:#edf2fb}
+.count-picker button.cur{color:#1B5FCA;background:#e6eefb}
 
 /* SETTINGS */
 .lt-row{display:grid;grid-template-columns:70px 1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
@@ -343,7 +348,13 @@ input,select{font:inherit}
       <div class="fg"><label>Учитель</label><select class="fi" id="fTeacher"></select></div>
       <div class="fg"><label>Тип урока</label><select class="fi" id="fLType"></select></div>
       <div class="frow">
-        <div class="fg" style="flex:0 0 auto"><label>Уроков</label><select class="fi-sm" id="fCount"></select></div>
+        <div class="fg" style="flex:0 0 auto"><label>Уроков</label>
+          <div style="position:relative;display:inline-block">
+            <button type="button" id="fCountBtn" class="count-btn"><span id="fCountDisplay">1</span><span class="count-arr">▾</span></button>
+            <div id="fCountPicker" class="count-picker hide"></div>
+            <input type="hidden" id="fCount" value="1">
+          </div>
+        </div>
         <div class="fg"><label>Цена (клиент) ₽</label><input class="fi" id="fLPrice" type="number" min="0"></div>
         <div class="fg"><label>Ставка (учитель) ₽</label><input class="fi" id="fLRate" type="number" min="0"></div>
       </div>
@@ -1080,14 +1091,38 @@ function updatePrev() {
     Учителю: <strong style="color:var(--red)">${rub(co)}</strong> ·
     Прибыль: <strong style="color:var(--acc)">${rub(pr)}</strong>`;
 }
+function setCount(n) {
+  document.getElementById('fCount').value=n;
+  document.getElementById('fCountDisplay').textContent=n;
+  const picker=document.getElementById('fCountPicker');
+  picker.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.v===n));
+  picker.classList.add('hide');
+  updatePrev();
+}
+function toggleCountPicker(e) {
+  e.stopPropagation();
+  const picker=document.getElementById('fCountPicker');
+  if(!picker.children.length){
+    for(let i=1;i<=99;i++){
+      const b=document.createElement('button');
+      b.type='button'; b.textContent=i; b.dataset.v=i;
+      b.addEventListener('click',ev=>{ev.stopPropagation();setCount(i);});
+      picker.appendChild(b);
+    }
+  }
+  const isHidden=picker.classList.contains('hide');
+  picker.classList.toggle('hide',!isHidden);
+  if(isHidden){
+    const cur=+document.getElementById('fCount').value||1;
+    picker.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.v===cur));
+    const curBtn=picker.querySelector('.cur');
+    if(curBtn) setTimeout(()=>curBtn.scrollIntoView({block:'nearest'}),0);
+  }
+}
 function openAddL(sid) {
   lessSid=sid; fillTeacherSel();
-  const fc=document.getElementById('fCount');
-  if(!fc.options.length){
-    for(let i=1;i<=99;i++) fc.add(new Option(i,i));
-  }
-  fc.value=1;
-  openM('mLesson'); setTimeout(()=>document.getElementById('fCount').focus(),50);
+  setCount(1);
+  openM('mLesson'); setTimeout(()=>document.getElementById('fCountBtn').focus(),50);
 }
 function saveL() {
   const tid=document.getElementById('fTeacher').value;
@@ -1464,7 +1499,11 @@ document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
 document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
-document.getElementById('fCount').addEventListener('change',updatePrev);
+document.getElementById('fCountBtn').addEventListener('click',toggleCountPicker);
+document.addEventListener('click',e=>{
+  const p=document.getElementById('fCountPicker');
+  if(p&&!p.classList.contains('hide')&&!p.contains(e.target)&&e.target.id!=='fCountBtn'&&!e.target.closest('#fCountBtn')) p.classList.add('hide');
+});
 document.getElementById('fLPrice').addEventListener('input',updatePrev);
 document.getElementById('fLRate').addEventListener('input',updatePrev);
 
