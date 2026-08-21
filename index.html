@@ -4,68 +4,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Учебный центр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 :root {
-  --bg:#E8F2FA;--surf:#FFF;--surf2:#EFF7FD;--bd:#BDD4E5;--bd2:#D2E5F1;
-  --txt:#1A2C3E;--txt2:#3E6578;--txt3:#6A93AB;
-  --acc:#2E7DB5;--acc-bg:#D6EAF7;
-  --grn:#15803D;--grn-bg:#DCFCE7;
-  --red:#C41E1E;--red-bg:#FEEAEA;
-  --amb:#B45309;--amb-bg:#FEF3C7;
-  --hdr:#4080A8;
-  --sh:0 1px 3px rgba(20,50,80,.07),0 4px 16px rgba(20,50,80,.06);
-  --sh-sm:0 1px 2px rgba(20,50,80,.08);
+  --bg:#EBF1F8;--surf:#FFF;--surf2:#F3F7FC;--bd:#C8D5E6;--bd2:#DDE6F2;
+  --txt:#0F1B2D;--txt2:#4A6278;--txt3:#8AA2BA;
+  --acc:#1660B8;--acc-bg:#D8EAFF;
+  --grn:#166534;--grn-bg:#DCFCE7;
+  --red:#991B1B;--red-bg:#FEE2E2;
+  --amb:#92400E;--amb-bg:#FEF3C7;
+  --hdr:#FFF;--hdr-bd:#C8D5E6;--hdr-txt:#0F1B2D;--hdr-ico:#7A96B2;--hdr-sel:#F0F5FC;
+  --sh:0 1px 4px rgba(10,22,46,.06),0 6px 18px rgba(10,22,46,.05);
+  --sh-sm:0 1px 2px rgba(10,22,46,.07);
   --r:8px;--r-sm:5px;
 }
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#080F1A;--surf:#101D2E;--surf2:#162540;--bd:#1E3050;--bd2:#172540;
-  --txt:#CBD8E8;--txt2:#6888A8;--txt3:#3A5A7A;
+  --bg:#0C1422;--surf:#141F30;--surf2:#1A2840;--bd:#1E3050;--bd2:#172540;
+  --txt:#C0D2E4;--txt2:#5A7898;--txt3:#2E4860;
   --acc:#4D8FFF;--acc-bg:#0D1F3C;
   --grn:#34D399;--grn-bg:#052015;
   --red:#F87171;--red-bg:#1F0808;
   --amb:#FBB042;--amb-bg:#1A1000;
-  --hdr:#060D18;
+  --hdr:#080F1A;--hdr-bd:#1E3050;--hdr-txt:#C0D2E4;--hdr-ico:#5A7898;--hdr-sel:#1A2840;
   --sh:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
   --sh-sm:0 1px 2px rgba(0,0,0,.4);
 }}
 :root[data-theme="dark"]{
-  --bg:#080F1A;--surf:#101D2E;--surf2:#162540;--bd:#1E3050;--bd2:#172540;
-  --txt:#CBD8E8;--txt2:#6888A8;--txt3:#3A5A7A;
+  --bg:#0C1422;--surf:#141F30;--surf2:#1A2840;--bd:#1E3050;--bd2:#172540;
+  --txt:#C0D2E4;--txt2:#5A7898;--txt3:#2E4860;
   --acc:#4D8FFF;--acc-bg:#0D1F3C;
   --grn:#34D399;--grn-bg:#052015;
   --red:#F87171;--red-bg:#1F0808;
   --amb:#FBB042;--amb-bg:#1A1000;
-  --hdr:#060D18;
+  --hdr:#080F1A;--hdr-bd:#1E3050;--hdr-txt:#C0D2E4;--hdr-ico:#5A7898;--hdr-sel:#1A2840;
   --sh:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
   --sh-sm:0 1px 2px rgba(0,0,0,.4);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100%}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100%}
 button{font:inherit;cursor:pointer;border:none;background:none}
 input,select{font:inherit}
 
 /* HEADER */
-.hdr{background:var(--hdr);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.hdr{background:var(--hdr);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--hdr-bd);box-shadow:var(--sh-sm)}
 .logo{width:30px;height:30px;border-radius:7px;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;flex-shrink:0}
-.site-name{color:rgba(255,255,255,.85);font-size:14px;font-weight:700;margin-right:auto}
+.site-name{color:var(--hdr-txt);font-size:14px;font-weight:700;margin-right:auto}
 .week-nav{display:flex;align-items:center;gap:5px}
-.wbtn{width:26px;height:26px;border-radius:var(--r-sm);color:rgba(255,255,255,.65);font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .13s,color .13s}
-.wbtn:hover{background:rgba(255,255,255,.12);color:#fff}
-.wsel{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--r-sm);padding:5px 10px;font-size:13px;font-weight:500;cursor:pointer;outline:none;max-width:180px}
-.wsel option{background:#1a2a40}
-.hdr-icon{width:30px;height:30px;border-radius:var(--r-sm);color:rgba(255,255,255,.6);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .13s}
-.hdr-icon:hover{background:rgba(255,255,255,.12);color:#fff}
+.wbtn{width:26px;height:26px;border-radius:var(--r-sm);color:var(--hdr-ico);font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .13s,color .13s}
+.wbtn:hover{background:var(--hdr-sel);color:var(--hdr-txt)}
+.wsel{background:var(--hdr-sel);border:1px solid var(--hdr-bd);color:var(--hdr-txt);border-radius:var(--r-sm);padding:5px 10px;font-size:13px;font-weight:500;cursor:pointer;outline:none;max-width:180px}
+.wsel option{background:var(--surf)}
+.hdr-icon{width:30px;height:30px;border-radius:var(--r-sm);color:var(--hdr-ico);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .13s;position:relative}
+.hdr-icon:hover{background:var(--hdr-sel);color:var(--hdr-txt)}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);position:absolute;top:4px;right:4px;transition:background .3s}
-.hdr-icon{position:relative}
 
 /* SUMMARY BAR */
 .sbar{background:var(--surf);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;box-shadow:var(--sh-sm)}
 .sitem{display:flex;flex-direction:column;padding:11px 20px;border-right:1px solid var(--bd2);min-width:110px}
 .sitem:first-child{padding-left:20px}
 .sitem:last-child{border-right:none}
-.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:1px;min-height:3em;display:flex;align-items:flex-start}
-.sval{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);white-space:nowrap}
+.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:1px}
+.sval{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);white-space:nowrap;letter-spacing:-.02em}
 .sval.grn{color:var(--grn)}.sval.red{color:var(--red)}.sval.acc{color:var(--acc)}
 .sbal-input{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);background:transparent;border:none;outline:none;width:140px}
 .sbal-input::placeholder{color:var(--txt3);font-weight:400;font-size:14px}
@@ -108,7 +109,7 @@ input,select{font:inherit}
 .badge-vac{background:var(--amb-bg);color:var(--amb)}
 .badge-fin{background:var(--surf2);color:var(--txt3)}
 .st-sep td{background:var(--surf2);padding:4px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
-.tch-sep td{padding:5px 12px 2px;border-bottom:none;background:transparent;font-size:11px;font-weight:700;color:var(--txt3)}
+.tch-sep td{padding:5px 12px 4px;border-bottom:1px solid var(--bd2);border-top:1px solid var(--bd);background:var(--surf2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt2)}
 .mt tbody tr.st-sep:hover td,.mt tbody tr.tch-sep:hover td{background:inherit}
 .rib.fin:hover{background:var(--grn-bg);color:var(--grn)}
 .status-pop{position:fixed;background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);z-index:300;min-width:148px;overflow:hidden;padding:4px}
@@ -285,7 +286,6 @@ input,select{font:inherit}
           <th class="col-num">#</th><th class="col-cls">Кл.</th>
           <th class="col-name">Имя ученика</th><th class="col-st">Статус</th>
           <th>Уроки недели</th>
-          <th class="col-money r">Баланс нач.</th>
           <th class="col-money r">Приход</th>
           <th class="col-money r">Остаток кон.</th><th class="col-act"></th>
         </tr></thead>
@@ -823,6 +823,7 @@ function renderSts() {
         lastTid=tid;
       }
     }
+    const pTch=s.status==='active'?getT(getPrimaryTid(s,w)):null;
     const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':'badge-vac';
     const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':'Каникулы';
     let tags=ls.map(l => {
@@ -842,10 +843,9 @@ function renderSts() {
     rows+=`<tr>
       <td class="mn" style="color:var(--txt3)">${sortIdx+1}</td>
       <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
-      <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">${pTch?`<span style="width:3px;height:18px;border-radius:2px;background:${pTch.col};display:block;flex-shrink:0"></span>`:''}<span><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</span></div></td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
-      <td class="r">${prevWkId?`<span class="mn" style="color:var(--txt2)">${balStart!==0?rub(balStart):'—'}</span>`:`<input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number">`}</td>
       <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="income" value="${income||''}" placeholder="0 ₽" type="number"></td>
       <td class="r mn ${endCls}">${balEnd!==0?rub(balEnd):'—'}</td>
       <td><div class="racts">
@@ -859,7 +859,6 @@ function renderSts() {
   const endTotCls=totEnd>0?'mn-g':totEnd<0?'mn-r':'mn-d';
   foot.innerHTML=`<tr>
     <td colspan="5" class="r" style="color:var(--txt3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Итого за неделю</td>
-    <td class="r mn">${totBs!==0?rub(totBs):'—'}</td>
     <td class="r mn mn-g">${totInc>0?rub(totInc):'—'}</td>
     <td class="r mn ${endTotCls}">${totEnd!==0?rub(totEnd):'—'}</td>
     <td></td>
@@ -1505,6 +1504,8 @@ document.getElementById('btnNext').addEventListener('click',()=>navWk(1));
 document.getElementById('btnAddWk').addEventListener('click',addWk);
 document.getElementById('btnEditWk').addEventListener('click',editCurrentWk);
 document.getElementById('btnDelWkModal').addEventListener('click',deleteWkModal);
+
+});
 document.getElementById('btnTheme').addEventListener('click',()=>{
   const cur=document.documentElement.getAttribute('data-theme');
   const next=cur==='dark'?'light':cur==='light'?'':'dark';
