@@ -824,6 +824,7 @@ function renderSts() {
         lastTid=tid;
       }
     }
+    const pTch=s.status==='active'?getT(getPrimaryTid(s,w)):null;
     const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':'badge-vac';
     const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':'Каникулы';
     let tags=ls.map(l => {
@@ -843,7 +844,7 @@ function renderSts() {
     rows+=`<tr>
       <td class="mn" style="color:var(--txt3)">${sortIdx+1}</td>
       <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
-      <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">${pTch?'<span style="width:3px;height:18px;border-radius:2px;background:'+pTch.col+';display:block;flex-shrink:0"></span>':''}<span><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</span></div></td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
       <td class="r">${prevWkId?`<span class="mn" style="color:var(--txt2)">${balStart!==0?rub(balStart):'—'}</span>`:`<input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number">`}</td>
