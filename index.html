@@ -190,6 +190,10 @@ input,select{font:inherit}
 .pay-btn.unpaid{background:var(--surf2);color:var(--txt3);border-color:var(--bd)}
 .pay-btn.unpaid:hover{background:var(--red-bg);color:var(--red);border-color:transparent}
 
+/* MINI COUNT SELECT */
+.fi-sm{padding:3px 6px;background:#f0f4fa;border:1px solid #c8d4e4;border-radius:var(--r-sm);color:#0E1D2E;font-size:13px;font-weight:700;outline:none;width:62px;cursor:pointer;transition:border-color .13s}
+.fi-sm:focus{border-color:#1B5FCA}
+
 /* SETTINGS */
 .lt-row{display:grid;grid-template-columns:70px 1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
 .lt-row .fi{padding:7px 10px}
@@ -339,7 +343,7 @@ input,select{font:inherit}
       <div class="fg"><label>Учитель</label><select class="fi" id="fTeacher"></select></div>
       <div class="fg"><label>Тип урока</label><select class="fi" id="fLType"></select></div>
       <div class="frow">
-        <div class="fg"><label>Кол-во уроков</label><select class="fi" id="fCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+        <div class="fg" style="flex:0 0 auto"><label>Уроков</label><select class="fi-sm" id="fCount"></select></div>
         <div class="fg"><label>Цена (клиент) ₽</label><input class="fi" id="fLPrice" type="number" min="0"></div>
         <div class="fg"><label>Ставка (учитель) ₽</label><input class="fi" id="fLRate" type="number" min="0"></div>
       </div>
@@ -1078,7 +1082,11 @@ function updatePrev() {
 }
 function openAddL(sid) {
   lessSid=sid; fillTeacherSel();
-  document.getElementById('fCount').value=1;
+  const fc=document.getElementById('fCount');
+  if(!fc.options.length){
+    for(let i=1;i<=99;i++) fc.add(new Option(i,i));
+  }
+  fc.value=1;
   openM('mLesson'); setTimeout(()=>document.getElementById('fCount').focus(),50);
 }
 function saveL() {
