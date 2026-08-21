@@ -261,6 +261,7 @@ input,select{font:inherit}
 </header>
 
 <div class="sbar">
+  <div class="sitem"><div class="slbl">Баланс нач.</div><input class="sbal-input" id="startBal" type="number" placeholder="0 ₽"></div>
   <div class="sitem"><div class="slbl">Приход</div><div class="sval grn" id="sRev">—</div></div>
   <div class="sitem"><div class="slbl">Учителям</div><div class="sval red" id="sCost">—</div></div>
   <div class="sitem" id="sbarP" style="display:none"><div class="slbl">Партнёрам</div><div class="sval red" id="sPartnerCost">—</div></div>
@@ -285,6 +286,7 @@ input,select{font:inherit}
           <th class="col-num">#</th><th class="col-cls">Кл.</th>
           <th class="col-name">Имя ученика</th><th class="col-st">Статус</th>
           <th>Уроки недели</th>
+          <th class="col-money r">Баланс нач.</th>
           <th class="col-money r">Приход</th>
           <th class="col-money r">Остаток кон.</th><th class="col-act"></th>
         </tr></thead>
@@ -762,6 +764,7 @@ function renderPartnerStudents(selectedIds) {
 function renderBal() {
   const w=wk(); const tot=calcWk(); const sb=w?.startBal||0;
   const partnerTotal=S.partners.reduce((s,p)=>s+calcPartnerN(p,w)*p.rate,0);
+  document.getElementById('startBal').value = sb||'';
   document.getElementById('sRev').textContent = rub(tot.rev);
   document.getElementById('sCost').textContent = rub(tot.cost);
   const sbarP=document.getElementById('sbarP');
@@ -844,6 +847,7 @@ function renderSts() {
       <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
+      <td class="r">${prevWkId?`<span class="mn" style="color:var(--txt2)">${balStart!==0?rub(balStart):'—'}</span>`:`<input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number">`}</td>
       <td class="r"><input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="income" value="${income||''}" placeholder="0 ₽" type="number"></td>
       <td class="r mn ${endCls}">${balEnd!==0?rub(balEnd):'—'}</td>
       <td><div class="racts">
@@ -857,6 +861,7 @@ function renderSts() {
   const endTotCls=totEnd>0?'mn-g':totEnd<0?'mn-r':'mn-d';
   foot.innerHTML=`<tr>
     <td colspan="5" class="r" style="color:var(--txt3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Итого за неделю</td>
+    <td class="r mn">${totBs!==0?rub(totBs):'—'}</td>
     <td class="r mn mn-g">${totInc>0?rub(totInc):'—'}</td>
     <td class="r mn ${endTotCls}">${totEnd!==0?rub(totEnd):'—'}</td>
     <td></td>
@@ -1502,7 +1507,8 @@ document.getElementById('btnNext').addEventListener('click',()=>navWk(1));
 document.getElementById('btnAddWk').addEventListener('click',addWk);
 document.getElementById('btnEditWk').addEventListener('click',editCurrentWk);
 document.getElementById('btnDelWkModal').addEventListener('click',deleteWkModal);
-
+document.getElementById('startBal').addEventListener('change',e=>{
+  const w=wk(); if(w){w.startBal=parseFloat(e.target.value)||0;save();renderBal();}
 });
 document.getElementById('btnTheme').addEventListener('click',()=>{
   const cur=document.documentElement.getAttribute('data-theme');
