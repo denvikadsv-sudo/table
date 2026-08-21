@@ -488,6 +488,9 @@ input,select{font:inherit}
     <div class="mbody">
       <div class="fg"><label>Имя партнёра</label><input class="fi" id="fPName" placeholder="Арендодатель"></div>
       <div class="fg"><label>Ставка за 1 урок ₽</label><input class="fi" id="fPRate" type="number" min="0" value="200"></div>
+      <div class="fg"><label>Ученики партнёра</label>
+        <div id="fPStudents" style="max-height:180px;overflow-y:auto;border:1px solid var(--bd);border-radius:var(--r-sm);padding:6px 10px;display:flex;flex-direction:column;gap:6px;background:var(--surf2)"></div>
+      </div>
     </div>
     <div class="mftr">
       <button class="btn-ghost" id="btnDelP" style="color:var(--red)">Удалить</button>
@@ -580,6 +583,7 @@ function loadS() {
       S = JSON.parse(saved);
       if (!S.teachers?.length) S.teachers = TEACHERS;
       if (!S.partners) S.partners = [];
+      S.partners.forEach(p=>{ if(!p.studentIds) p.studentIds=[]; });
       if (!S.sync) S.sync = {token:'',gistId:'',lastSync:''};
     } else { initS(); }
   } catch { initS(); }
@@ -738,10 +742,28 @@ function renderWkSel() {
   }).join('');
 }
 
+function calcPartnerN(p, w) {
+  if(!w||!p.studentIds?.length) return 0;
+  let n=0;
+  p.studentIds.forEach(sid=>{(w.lessons?.[sid]||[]).forEach(l=>{n+=l.n;});});
+  return n;
+}
+function renderPartnerStudents(selectedIds) {
+  const container=document.getElementById('fPStudents');
+  const visible=S.students.filter(s=>s.status!=='finished');
+  if(!visible.length){container.innerHTML='<span style="color:var(--txt3);font-size:12px">Нет учеников</span>';return;}
+  container.innerHTML=visible.map(s=>
+    `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:1px 0">
+      <input type="checkbox" value="${s.id}" ${selectedIds.includes(s.id)?'checked':''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--acc)">
+      <span>${esc(s.name||'—')}</span>
+      ${s.cls?`<span style="color:var(--txt3);font-size:11px">${esc(s.cls)} кл.</span>`:''}
+    </label>`
+  ).join('');
+}
+
 function renderBal() {
   const w=wk(); const tot=calcWk(); const sb=w?.startBal||0;
-  const totalN=calcTotalN();
-  const partnerTotal=S.partners.reduce((s,p)=>s+totalN*p.rate,0);
+  const partnerTotal=S.partners.reduce((s,p)=>s+calcPartnerN(p,w)*p.rate,0);
   document.getElementById('startBal').value = sb||'';
   document.getElementById('sRev').textContent = rub(tot.rev);
   document.getElementById('sCost').textContent = rub(tot.cost);
@@ -854,9 +876,8 @@ function renderSum() {
   const totalCount=tchWithLessons.length;
   const paidAmt=tchWithLessons.reduce((s,t)=>s+(paid[t.id]?tt[t.id].cost:0),0);
   const debtAmt=wt.cost-paidAmt;
-  const totalN=calcTotalN();
-  const partnerTotal=S.partners.reduce((s,p)=>s+totalN*p.rate,0);
-  const partnerPaidAmt=S.partners.reduce((s,p)=>s+(partnerPaid[p.id]?totalN*p.rate:0),0);
+  const partnerTotal=S.partners.reduce((s,p)=>s+calcPartnerN(p,w)*p.rate,0);
+  const partnerPaidAmt=S.partners.reduce((s,p)=>s+(partnerPaid[p.id]?calcPartnerN(p,w)*p.rate:0),0);
   const partnerDebt=partnerTotal-partnerPaidAmt;
   let html=`<div class="scard">
     <div class="scard-hdr"><span class="scard-name">Итоги недели</span><span class="scard-sub">${esc(w?.label||'')}</span></div>
@@ -886,15 +907,20 @@ function renderSum() {
     </div>`;
   });
   S.partners.forEach(p => {
-    const cost=totalN*p.rate;
+    const pN=calcPartnerN(p,w);
+    const cost=pN*p.rate;
     const isPaid=!!partnerPaid[p.id];
+    const stNames=(p.studentIds||[]).map(sid=>S.students.find(s=>s.id===sid)?.name||'').filter(Boolean);
     html+=`<div class="scard">
       <div class="scard-hdr">
         <span class="scard-name">${esc(p.name)}</span><span class="scard-sub">партнёр</span>
       </div>
-      <div class="srow"><span>Уроков</span><span class="srval">${totalN}</span></div>
+      ${stNames.length
+        ?`<div class="srow" style="align-items:flex-start"><span style="flex-shrink:0">Ученики</span><span class="srval" style="text-align:right;font-size:12px;font-weight:600;color:var(--txt2);white-space:normal">${stNames.map(n=>esc(n)).join(', ')}</span></div>`
+        :`<div class="srow"><span style="color:var(--txt3);font-size:12px">Ученики не назначены</span></div>`}
+      <div class="srow"><span>Уроков</span><span class="srval">${pN}</span></div>
       <div class="srow"><span>Ставка</span><span class="srval">${rub(p.rate)}/урок</span></div>
-      <div class="srow tot"><span>К выплате</span><span class="srval" style="color:var(--red)">${rub(cost)}</span></div>
+      <div class="srow tot"><span>К выплате</span><span class="srval" style="color:${cost>0?'var(--red)':'var(--txt3)'}">${cost>0?rub(cost):'—'}</span></div>
       <button class="pay-btn ${isPaid?'paid':'unpaid'}" data-pay-pid="${p.id}">${isPaid?'✓ Оплачено':'○ Не оплачено'}</button>
     </div>`;
   });
@@ -1232,6 +1258,7 @@ function openAddPartner() {
   document.getElementById('fPName').value='';
   document.getElementById('fPRate').value=200;
   document.getElementById('btnDelP').style.display='none';
+  renderPartnerStudents([]);
   openM('mPartner'); setTimeout(()=>document.getElementById('fPName').focus(),50);
 }
 function openEditPartner(pid) {
@@ -1241,17 +1268,19 @@ function openEditPartner(pid) {
   document.getElementById('fPName').value=p.name;
   document.getElementById('fPRate').value=p.rate;
   document.getElementById('btnDelP').style.display='inline-flex';
+  renderPartnerStudents(p.studentIds||[]);
   openM('mPartner'); setTimeout(()=>document.getElementById('fPName').focus(),50);
 }
 function savePartner() {
   const name=document.getElementById('fPName').value.trim();
   const rate=parseFloat(document.getElementById('fPRate').value)||0;
+  const studentIds=[...document.getElementById('fPStudents').querySelectorAll('input[type=checkbox]:checked')].map(cb=>cb.value);
   if(!name) return;
   if(editPid){
     const p=S.partners.find(p=>p.id===editPid); if(!p) return;
-    p.name=name; p.rate=rate;
+    p.name=name; p.rate=rate; p.studentIds=studentIds;
   } else {
-    S.partners.push({id:'p'+Date.now(),name,rate});
+    S.partners.push({id:'p'+Date.now(),name,rate,studentIds});
   }
   save(); closeM('mPartner'); renderSettings();
   showToast(editPid?'Партнёр обновлён':'Партнёр добавлен');
