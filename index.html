@@ -190,6 +190,15 @@ input,select{font:inherit}
 .pay-btn.unpaid{background:var(--surf2);color:var(--txt3);border-color:var(--bd)}
 .pay-btn.unpaid:hover{background:var(--red-bg);color:var(--red);border-color:transparent}
 
+/* MINI COUNT PICKER */
+.count-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 12px;background:#f0f4fa;border:1px solid #c8d4e4;border-radius:var(--r-sm);color:#0E1D2E;font-size:14px;font-weight:700;min-width:54px;cursor:pointer;transition:border-color .13s,box-shadow .13s}
+.count-btn:hover,.count-btn:focus{border-color:#1B5FCA;outline:none}
+.count-arr{font-size:8px;color:#8BA3BB}
+.count-picker{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #c8d4e4;border-radius:var(--r-sm);box-shadow:0 4px 20px rgba(14,29,46,.14);z-index:500;max-height:180px;overflow-y:auto;min-width:54px;overscroll-behavior:contain}
+.count-picker button{display:block;width:100%;padding:6px 12px;text-align:center;font-size:13px;font-weight:700;color:#0E1D2E;transition:background .09s;cursor:pointer;border:none;background:none}
+.count-picker button:hover{background:#edf2fb}
+.count-picker button.cur{color:#1B5FCA;background:#e6eefb}
+
 /* SETTINGS */
 .lt-row{display:grid;grid-template-columns:70px 1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
 .lt-row .fi{padding:7px 10px}
@@ -241,6 +250,7 @@ input,select{font:inherit}
     <select class="wsel" id="wkSel"></select>
     <button class="wbtn" id="btnNext">&#8250;</button>
     <button class="wbtn hdr-icon" id="btnAddWk" title="Новая неделя" style="font-size:18px">+</button>
+    <button class="wbtn hdr-icon" id="btnEditWk" title="Изменить / удалить неделю" style="font-size:13px">✏</button>
   </div>
   <button class="hdr-icon" id="btnSync" title="Загрузить данные с сервера">
     <span id="syncIcon">⟳</span>
@@ -254,6 +264,7 @@ input,select{font:inherit}
   <div class="sitem"><div class="slbl">Баланс нач.</div><input class="sbal-input" id="startBal" type="number" placeholder="0 ₽"></div>
   <div class="sitem"><div class="slbl">Приход</div><div class="sval grn" id="sRev">—</div></div>
   <div class="sitem"><div class="slbl">Учителям</div><div class="sval red" id="sCost">—</div></div>
+  <div class="sitem" id="sbarP" style="display:none"><div class="slbl">Партнёрам</div><div class="sval red" id="sPartnerCost">—</div></div>
   <div class="sitem"><div class="slbl">Прибыль центра</div><div class="sval acc" id="sProfit">—</div></div>
   <div class="sitem"><div class="slbl">Баланс кон.</div><div class="sval" id="sEnd">—</div></div>
 </div>
@@ -337,7 +348,13 @@ input,select{font:inherit}
       <div class="fg"><label>Учитель</label><select class="fi" id="fTeacher"></select></div>
       <div class="fg"><label>Тип урока</label><select class="fi" id="fLType"></select></div>
       <div class="frow">
-        <div class="fg"><label>Кол-во уроков</label><input class="fi" id="fCount" type="number" value="1" min="1" max="20"></div>
+        <div class="fg" style="flex:0 0 auto"><label>Уроков</label>
+          <div style="position:relative;display:inline-block">
+            <button type="button" id="fCountBtn" class="count-btn"><span id="fCountDisplay">1</span><span class="count-arr">▾</span></button>
+            <div id="fCountPicker" class="count-picker hide"></div>
+            <input type="hidden" id="fCount" value="1">
+          </div>
+        </div>
         <div class="fg"><label>Цена (клиент) ₽</label><input class="fi" id="fLPrice" type="number" min="0"></div>
         <div class="fg"><label>Ставка (учитель) ₽</label><input class="fi" id="fLRate" type="number" min="0"></div>
       </div>
@@ -445,7 +462,7 @@ input,select{font:inherit}
 <!-- Modal: Week -->
 <div class="mbg hide" id="mWeek">
   <div class="modal" style="max-width:340px">
-    <div class="mhdr"><h2>Новая неделя</h2><button class="mcls" data-close="mWeek">×</button></div>
+    <div class="mhdr"><h2 id="mWkTitle">Новая неделя</h2><button class="mcls" data-close="mWeek">×</button></div>
     <div class="mbody">
       <div style="display:flex;gap:8px;margin-bottom:4px">
         <button class="btn-ghost" id="btnPickThisWk" style="flex:1">Эта неделя</button>
@@ -453,8 +470,11 @@ input,select{font:inherit}
       </div>
       <div class="fg" style="margin-top:8px"><label>Или выберите любой день</label><input class="fi" id="fWkDate" type="date"></div>
       <div class="lprev" id="wkPreview" style="text-align:center;font-size:15px;font-weight:800;padding:12px"></div>
+      <div id="wkHint" style="font-size:12px;color:var(--txt3);text-align:center;margin-top:2px"></div>
     </div>
     <div class="mftr">
+      <button class="btn-ghost" id="btnDelWkModal" style="color:var(--red);display:none">Удалить</button>
+      <div style="flex:1"></div>
       <button class="btn-ghost" data-close="mWeek">Отмена</button>
       <button class="btn-pri" id="btnSaveWk">Добавить неделю</button>
     </div>
@@ -720,10 +740,17 @@ function renderWkSel() {
 
 function renderBal() {
   const w=wk(); const tot=calcWk(); const sb=w?.startBal||0;
+  const totalN=calcTotalN();
+  const partnerTotal=S.partners.reduce((s,p)=>s+totalN*p.rate,0);
   document.getElementById('startBal').value = sb||'';
   document.getElementById('sRev').textContent = rub(tot.rev);
   document.getElementById('sCost').textContent = rub(tot.cost);
-  document.getElementById('sProfit').textContent = rub(tot.profit);
+  const sbarP=document.getElementById('sbarP');
+  if(S.partners.length>0){
+    sbarP.style.display='';
+    document.getElementById('sPartnerCost').textContent=rub(partnerTotal);
+  } else { sbarP.style.display='none'; }
+  document.getElementById('sProfit').textContent = rub(tot.profit-partnerTotal);
   document.getElementById('sEnd').textContent = rub(sb+tot.rev);
 }
 
@@ -756,7 +783,7 @@ function renderSts() {
   const showTchSep=activeTids.length>1;
   let rows=''; let totBs=0,totInc=0,totEnd=0;
   let lastStatus=null; let lastTid=null;
-  sorted.forEach(s => {
+  sorted.forEach((s, sortIdx) => {
     const ls=w?.lessons?.[s.id]||[];
     const prevWkId=getPrevWkId(S.curWk);
     const income=w?.stBal?.[s.id]?.income||0;
@@ -793,7 +820,7 @@ function renderSts() {
     tags += `<button class="add-l-btn" data-add-ls="${s.id}">+ урок</button>`;
     const endCls=balEnd>0?'mn-g':balEnd<0?'mn-r':'mn-d';
     rows+=`<tr>
-      <td class="mn" style="color:var(--txt3)">${s.num}</td>
+      <td class="mn" style="color:var(--txt3)">${sortIdx+1}</td>
       <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
       <td><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
@@ -1064,10 +1091,38 @@ function updatePrev() {
     Учителю: <strong style="color:var(--red)">${rub(co)}</strong> ·
     Прибыль: <strong style="color:var(--acc)">${rub(pr)}</strong>`;
 }
+function setCount(n) {
+  document.getElementById('fCount').value=n;
+  document.getElementById('fCountDisplay').textContent=n;
+  const picker=document.getElementById('fCountPicker');
+  picker.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.v===n));
+  picker.classList.add('hide');
+  updatePrev();
+}
+function toggleCountPicker(e) {
+  e.stopPropagation();
+  const picker=document.getElementById('fCountPicker');
+  if(!picker.children.length){
+    for(let i=1;i<=99;i++){
+      const b=document.createElement('button');
+      b.type='button'; b.textContent=i; b.dataset.v=i;
+      b.addEventListener('click',ev=>{ev.stopPropagation();setCount(i);});
+      picker.appendChild(b);
+    }
+  }
+  const isHidden=picker.classList.contains('hide');
+  picker.classList.toggle('hide',!isHidden);
+  if(isHidden){
+    const cur=+document.getElementById('fCount').value||1;
+    picker.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.v===cur));
+    const curBtn=picker.querySelector('.cur');
+    if(curBtn) setTimeout(()=>curBtn.scrollIntoView({block:'nearest'}),0);
+  }
+}
 function openAddL(sid) {
   lessSid=sid; fillTeacherSel();
-  document.getElementById('fCount').value=1;
-  openM('mLesson'); setTimeout(()=>document.getElementById('fCount').focus(),50);
+  setCount(1);
+  openM('mLesson'); setTimeout(()=>document.getElementById('fCountBtn').focus(),50);
 }
 function saveL() {
   const tid=document.getElementById('fTeacher').value;
@@ -1316,10 +1371,58 @@ async function loadFromGist() {
 }
 
 /* ── WEEKS ────────────────────────────────────── */
+let editWkId=null;
+
 function addWk() {
-  document.getElementById('fWkDate').value=toISODate(getMonday());
+  editWkId=null;
+  document.getElementById('mWkTitle').textContent='Новая неделя';
+  document.getElementById('btnSaveWk').textContent='Добавить неделю';
+  document.getElementById('btnDelWkModal').style.display='none';
+  // Suggest next week after the last existing week
+  const ids=sortedWkIds();
+  let suggestedMonday;
+  if(ids.length>0){
+    const lastWk=S.weeks[ids[ids.length-1]];
+    if(lastWk.startDate){
+      const lastMon=new Date(lastWk.startDate+'T12:00:00');
+      suggestedMonday=new Date(lastMon);
+      suggestedMonday.setDate(suggestedMonday.getDate()+7);
+    }
+  }
+  if(!suggestedMonday) suggestedMonday=getMonday();
+  document.getElementById('fWkDate').value=toISODate(suggestedMonday);
   updateWkPreview();
+  // Show hint: what week comes next
+  const hintEl=document.getElementById('wkHint');
+  if(ids.length>0){
+    hintEl.textContent='Следующая неделя после последней: '+weekLabel(suggestedMonday);
+  } else { hintEl.textContent=''; }
   openM('mWeek');
+}
+
+function editCurrentWk() {
+  const w=wk(); if(!w) return;
+  editWkId=S.curWk;
+  document.getElementById('mWkTitle').textContent='Изменить неделю';
+  document.getElementById('btnSaveWk').textContent='Сохранить';
+  document.getElementById('btnDelWkModal').style.display='inline-flex';
+  document.getElementById('fWkDate').value=w.startDate||toISODate(getMonday());
+  updateWkPreview();
+  document.getElementById('wkHint').textContent='';
+  openM('mWeek');
+}
+
+function deleteWkModal() {
+  const ids=sortedWkIds();
+  if(ids.length<=1){showToast('Нельзя удалить единственную неделю');return;}
+  const w=wk(); if(!w) return;
+  if(!confirm(`Удалить неделю «${w.label}»?\nВсе данные за эту неделю будут потеряны.`)) return;
+  const idx=ids.indexOf(S.curWk);
+  delete S.weeks[S.curWk];
+  const remaining=sortedWkIds();
+  S.curWk=remaining[Math.min(idx,remaining.length-1)];
+  save(); render(); closeM('mWeek');
+  showToast('Неделя удалена');
 }
 
 function updateWkPreview() {
@@ -1339,6 +1442,13 @@ function saveWk() {
   const monday=getMonday(new Date(v+'T12:00:00'));
   const startDate=toISODate(monday);
   const label=weekLabel(monday);
+  if(editWkId){
+    const w=S.weeks[editWkId]; if(!w) return;
+    w.startDate=startDate; w.label=label;
+    save(); render(); closeM('mWeek');
+    showToast('Неделя обновлена');
+    return;
+  }
   const existing=Object.values(S.weeks).find(w=>w.startDate===startDate);
   if(existing){S.curWk=existing.id;save();render();closeM('mWeek');return;}
   const wid='w'+Date.now();
@@ -1366,6 +1476,8 @@ document.getElementById('wkSel').addEventListener('change',e=>{S.curWk=e.target.
 document.getElementById('btnPrev').addEventListener('click',()=>navWk(-1));
 document.getElementById('btnNext').addEventListener('click',()=>navWk(1));
 document.getElementById('btnAddWk').addEventListener('click',addWk);
+document.getElementById('btnEditWk').addEventListener('click',editCurrentWk);
+document.getElementById('btnDelWkModal').addEventListener('click',deleteWkModal);
 document.getElementById('startBal').addEventListener('change',e=>{
   const w=wk(); if(w){w.startBal=parseFloat(e.target.value)||0;save();renderBal();}
 });
@@ -1387,7 +1499,11 @@ document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
 document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
-document.getElementById('fCount').addEventListener('input',updatePrev);
+document.getElementById('fCountBtn').addEventListener('click',toggleCountPicker);
+document.addEventListener('click',e=>{
+  const p=document.getElementById('fCountPicker');
+  if(p&&!p.classList.contains('hide')&&!p.contains(e.target)&&e.target.id!=='fCountBtn'&&!e.target.closest('#fCountBtn')) p.classList.add('hide');
+});
 document.getElementById('fLPrice').addEventListener('input',updatePrev);
 document.getElementById('fLRate').addEventListener('input',updatePrev);
 
