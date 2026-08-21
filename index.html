@@ -261,7 +261,6 @@ input,select{font:inherit}
 </header>
 
 <div class="sbar">
-  <div class="sitem"><div class="slbl">Баланс нач.</div><input class="sbal-input" id="startBal" type="number" placeholder="0 ₽"></div>
   <div class="sitem"><div class="slbl">Приход</div><div class="sval grn" id="sRev">—</div></div>
   <div class="sitem"><div class="slbl">Учителям</div><div class="sval red" id="sCost">—</div></div>
   <div class="sitem" id="sbarP" style="display:none"><div class="slbl">Партнёрам</div><div class="sval red" id="sPartnerCost">—</div></div>
@@ -764,7 +763,6 @@ function renderPartnerStudents(selectedIds) {
 function renderBal() {
   const w=wk(); const tot=calcWk(); const sb=w?.startBal||0;
   const partnerTotal=S.partners.reduce((s,p)=>s+calcPartnerN(p,w)*p.rate,0);
-  document.getElementById('startBal').value = sb||'';
   document.getElementById('sRev').textContent = rub(tot.rev);
   document.getElementById('sCost').textContent = rub(tot.cost);
   const sbarP=document.getElementById('sbarP');
@@ -1507,9 +1505,6 @@ document.getElementById('btnNext').addEventListener('click',()=>navWk(1));
 document.getElementById('btnAddWk').addEventListener('click',addWk);
 document.getElementById('btnEditWk').addEventListener('click',editCurrentWk);
 document.getElementById('btnDelWkModal').addEventListener('click',deleteWkModal);
-document.getElementById('startBal').addEventListener('change',e=>{
-  const w=wk(); if(w){w.startBal=parseFloat(e.target.value)||0;save();renderBal();}
-});
 document.getElementById('btnTheme').addEventListener('click',()=>{
   const cur=document.documentElement.getAttribute('data-theme');
   const next=cur==='dark'?'light':cur==='light'?'':'dark';
