@@ -262,7 +262,7 @@ input,select{font:inherit}
 </header>
 
 <div class="sbar">
-  <div class="sitem"><div class="slbl">Приход</div><div class="sval grn" id="sRev">—</div></div>
+  <div class="sitem"><div class="slbl">Выручка</div><div class="sval grn" id="sRev">—</div></div>
   <div class="sitem"><div class="slbl">Учителям</div><div class="sval red" id="sCost">—</div></div>
   <div class="sitem" id="sbarP" style="display:none"><div class="slbl">Партнёрам</div><div class="sval red" id="sPartnerCost">—</div></div>
   <div class="sitem"><div class="slbl">Прибыль центра</div><div class="sval acc" id="sProfit">—</div></div>
@@ -287,7 +287,7 @@ input,select{font:inherit}
           <th class="col-name">Имя ученика</th><th class="col-st">Статус</th>
           <th>Уроки недели</th>
           <th class="col-money r">Баланс нач.</th>
-          <th class="col-money r">Приход</th>
+          <th class="col-money r">Выручка</th>
           <th class="col-money r">Остаток кон.</th><th class="col-act"></th>
         </tr></thead>
         <tbody id="stBody"></tbody>
@@ -884,7 +884,7 @@ function renderSum() {
   let html=`<div class="scard">
     <div class="scard-hdr"><span class="scard-name">Итоги недели</span><span class="scard-sub">${esc(w?.label||'')}</span></div>
     <div class="srow"><span>Баланс начало</span><span class="srval">${rub(sb)}</span></div>
-    <div class="srow"><span>Приход от учеников</span><span class="srval" style="color:var(--grn)">${rub(wt.rev)}</span></div>
+    <div class="srow"><span>Выручка от учеников</span><span class="srval" style="color:var(--grn)">${rub(wt.rev)}</span></div>
     <div class="srow"><span>Выплачено учителям</span><span class="srval" style="color:var(--red)">${rub(paidAmt)}</span></div>
     <div class="srow"><span>Долг учителям</span><span class="srval" style="color:${debtAmt>0?'var(--amb)':'var(--txt3)'}">${debtAmt>0?rub(debtAmt):'—'}</span></div>
     ${S.partners.length>0?`<div class="srow"><span>Выплачено партнёрам</span><span class="srval" style="color:var(--red)">${rub(partnerPaidAmt)}</span></div>`:''}
@@ -902,7 +902,7 @@ function renderSum() {
         <span class="scard-name">${esc(t.name)}</span><span class="scard-sub">${esc(t.sub)}</span>
       </div>
       <div class="srow"><span>Уроков</span><span class="srval">${tc.n}</span></div>
-      <div class="srow"><span>Приход</span><span class="srval" style="color:var(--grn)">${rub(tc.rev)}</span></div>
+      <div class="srow"><span>Выручка</span><span class="srval" style="color:var(--grn)">${rub(tc.rev)}</span></div>
       <div class="srow"><span>К выплате</span><span class="srval" style="color:var(--red)">${rub(tc.cost)}</span></div>
       <div class="srow tot"><span>Прибыль центра</span><span class="srval" style="color:var(--acc)">${rub(tc.rev-tc.cost)}</span></div>
       <button class="pay-btn ${isPaid?'paid':'unpaid'}" data-pay-tid="${t.id}">${isPaid?'✓ Оплачено':'○ Не оплачено'}</button>
