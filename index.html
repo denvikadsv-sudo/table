@@ -335,6 +335,7 @@ input,select{font:inherit}
           <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="vacation">Каникулы</option><option value="finished">Завершил</option></select>
         </div>
       </div>
+      <div class="fg"><label>Партнёр (источник ученика)</label><select class="fi" id="fPartner"></select></div>
     </div>
     <div class="mftr"><button class="btn-ghost" data-close="mStudent">Отмена</button><button class="btn-pri" id="btnSaveSt">Сохранить</button></div>
   </div>
@@ -825,6 +826,7 @@ function renderSts() {
       }
     }
     const pTch=s.status==='active'?getT(getPrimaryTid(s,w)):null;
+    const stP=getStudentPartner(s.id);
     const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':'badge-vac';
     const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':'Каникулы';
     let tags=ls.map(l => {
@@ -844,7 +846,7 @@ function renderSts() {
     rows+=`<tr>
       <td class="mn" style="color:var(--txt3)">${sortIdx+1}</td>
       <td style="color:var(--txt2)">${esc(s.cls||'')}</td>
-      <td><div style="display:flex;align-items:center;gap:8px">${pTch?'<span style="width:3px;height:18px;border-radius:2px;background:'+pTch.col+';display:block;flex-shrink:0"></span>':''}<span><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}</span></div></td>
+      <td><div style="display:flex;align-items:center;gap:8px">${pTch?'<span style="width:3px;height:18px;border-radius:2px;background:'+pTch.col+';display:block;flex-shrink:0"></span>':''}<span><strong>${esc(s.name||'—')}</strong>${s.group?`<br><span style="font-size:11px;color:var(--txt3)">${esc(s.group)}</span>`:''}${stP?`<br><span style="font-size:10px;color:var(--acc);font-weight:600">↪ ${esc(stP.name)} ${rub(stP.rate)}/ур.</span>`:''}</span></div></td>
       <td><span class="badge ${bCls}" data-cyc="${s.id}">${bTxt}</span></td>
       <td><div class="lcell">${tags}</div></td>
       <td class="r">${prevWkId?`<span class="mn" style="color:var(--txt2)">${balStart!==0?rub(balStart):'—'}</span>`:`<input class="tbl-inp" data-bal-sid="${s.id}" data-bal-field="balStart" value="${balStart||''}" placeholder="0 ₽" type="number">`}</td>
@@ -1052,6 +1054,7 @@ function openAddSt() {
   document.getElementById('mStTitle').textContent='Новый ученик';
   ['fCls','fName','fGroup'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='active';
+  fillPartnerSel(null);
   openM('mStudent'); setTimeout(()=>document.getElementById('fName').focus(),50);
 }
 function openEditSt(sid) {
@@ -1062,6 +1065,7 @@ function openEditSt(sid) {
   document.getElementById('fName').value=s.name||'';
   document.getElementById('fGroup').value=s.group||'';
   document.getElementById('fStatus').value=s.status||'active';
+  fillPartnerSel(getStudentPartner(sid)?.id||null);
   openM('mStudent');
 }
 function saveSt() {
@@ -1069,12 +1073,23 @@ function saveSt() {
   const name=document.getElementById('fName').value.trim();
   const group=document.getElementById('fGroup').value.trim();
   const status=document.getElementById('fStatus').value;
+  const pid=document.getElementById('fPartner').value;
+  let sid=editSid;
   if(editSid){
     const s=S.students.find(s=>s.id===editSid);
     if(s){s.cls=cls;s.name=name;s.group=group;s.status=status;}
   } else {
     const maxN=S.students.reduce((m,s)=>Math.max(m,s.num||0),0);
-    S.students.push({id:'s'+Date.now(),num:maxN+1,cls,name,group,status});
+    sid='s'+Date.now();
+    S.students.push({id:sid,num:maxN+1,cls,name,group,status});
+  }
+  S.partners.forEach(p=>{
+    if(!p.studentIds) p.studentIds=[];
+    p.studentIds=p.studentIds.filter(id=>id!==sid);
+  });
+  if(pid){
+    const p=S.partners.find(p=>p.id===pid);
+    if(p){if(!p.studentIds)p.studentIds=[];if(!p.studentIds.includes(sid))p.studentIds.push(sid);}
   }
   save(); closeM('mStudent'); render();
 }
@@ -1291,6 +1306,15 @@ function deletePartner() {
   if(!confirm(`Удалить партнёра «${p.name}»?`)) return;
   S.partners=S.partners.filter(pt=>pt.id!==editPid);
   save(); closeM('mPartner'); renderSettings(); showToast('Партнёр удалён');
+}
+
+function getStudentPartner(sid) {
+  return S.partners.find(p=>p.studentIds?.includes(sid))||null;
+}
+function fillPartnerSel(selectedId) {
+  const sel=document.getElementById('fPartner');
+  sel.innerHTML='<option value="">— нет партнёра —</option>'+
+    S.partners.map(p=>`<option value="${p.id}"${p.id===selectedId?' selected':''}>${esc(p.name)} — ${rub(p.rate)}/урок</option>`).join('');
 }
 
 /* ── SYNC (GITHUB GIST) ───────────────────────── */
