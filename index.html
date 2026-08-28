@@ -1505,7 +1505,10 @@ function saveWk() {
   const existing=Object.values(S.weeks).find(w=>w.startDate===startDate);
   if(existing){S.curWk=existing.id;save();render();closeM('mWeek');return;}
   const wid='w'+Date.now();
-  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:{},stBal:{}};
+  const _sids=sortedWkIds();
+  const _prev=_sids.length>0?S.weeks[_sids[_sids.length-1]]:null;
+  const _lessons=_prev?JSON.parse(JSON.stringify(_prev.lessons)):{};
+  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:_lessons,stBal:{}};
   S.curWk=wid; save(); render(); closeM('mWeek');
 }
 function navWk(dir) {
