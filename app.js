@@ -271,10 +271,15 @@ function getPrimaryTid(s, w) {
 }
 function sortStudents(students, w) {
   const order={active:0,vacation:1,finished:2};
+  const tidOrder={};
+  S.teachers.forEach((t,i)=>{tidOrder[t.id]=i;});
   return [...students].sort((a,b)=>{
     const sa=order[a.status]??0, sb=order[b.status]??0;
     if(sa!==sb) return sa-sb;
-    return (a.num||0)-(b.num||0);
+    const ta=getPrimaryTid(a,w), tb=getPrimaryTid(b,w);
+    if(!ta&&!tb) return 0;
+    if(!ta) return 1; if(!tb) return -1;
+    return (tidOrder[ta]??99)-(tidOrder[tb]??99);
   });
 }
 
@@ -285,8 +290,10 @@ function renderSts() {
     foot.innerHTML=''; return;
   }
   const sorted=sortStudents(S.students,w);
+  const activeTids=[...new Set(sorted.filter(s=>s.status==='active').map(s=>getPrimaryTid(s,w)).filter(Boolean))];
+  const showTchSep=activeTids.length>1;
   let rows=''; let totBs=0,totInc=0,totEnd=0;
-  let lastStatus=null;
+  let lastStatus=null; let lastTid=null;
   sorted.forEach((s, sortIdx) => {
     const ls=w?.lessons?.[s.id]||[];
     const prevWkId=getPrevWkId(S.curWk);
@@ -297,7 +304,15 @@ function renderSts() {
     if(s.status!==lastStatus){
       if(s.status==='vacation') rows+=`<tr class="st-sep"><td colspan="9">🌴 Каникулы</td></tr>`;
       else if(s.status==='finished') rows+=`<tr class="st-sep"><td colspan="9">✓ Завершили</td></tr>`;
-      lastStatus=s.status;
+      lastStatus=s.status; lastTid=null;
+    }
+    if(s.status==='active'&&showTchSep){
+      const tid=getPrimaryTid(s,w);
+      if(tid&&tid!==lastTid){
+        const t=getT(tid);
+        if(t) rows+=`<tr class="tch-sep"><td colspan="9"><span class="ldot" style="background:${t.col};width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle"></span>${esc(t.name)}</td></tr>`;
+        lastTid=tid;
+      }
     }
     const pTch=s.status==='active'?getT(getPrimaryTid(s,w)):null;
     const stP=getStudentPartner(s.id);
