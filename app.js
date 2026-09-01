@@ -549,7 +549,6 @@ function renderStLessons() {
     }).join('');
     return '<div class="stl-row">'+
       '<select class="fi stl-tch" onchange="stlTch('+i+',this.value)">'+opts+'</select>'+
-      '<input class="fi stl-num" type="number" min="1" value="'+(l.n||1)+'" oninput="stlUpd('+i+',\'n\',+this.value)" placeholder="Кол.">'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.p!=null?l.p:'')+'" oninput="stlUpd('+i+',\'p\',+this.value)" placeholder="Цена">'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.r!=null?l.r:'')+'" oninput="stlUpd('+i+',\'r\',+this.value)" placeholder="Ставка">'+
       '<button class="stl-del" onclick="stlDel('+i+')">×</button>'+
@@ -566,7 +565,7 @@ function stlUpd(i,field,val){stLessons[i][field]=val;}
 function stlDel(i){stLessons.splice(i,1);renderStLessons();}
 function addStLesson(){
   const t=S.teachers[0];const lt=t&&t.types&&t.types[0];
-  stLessons.push({tid:t?t.id:'',n:1,p:lt?lt.p:0,r:lt?lt.r:0});
+  stLessons.push({tid:t?t.id:'',p:lt?lt.p:0,r:lt?lt.r:0});
   renderStLessons();
 }
 
@@ -587,8 +586,7 @@ function openEditSt(sid) {
   document.getElementById('fGroup').value=s.group||'';
   document.getElementById('fStatus').value=s.status||'active';
   fillPartnerSel(getStudentPartner(sid)?.id||null);
-  const ls=wk()&&wk().lessons&&wk().lessons[sid]?wk().lessons[sid]:[];
-  stLessons=ls.map(function(l){return {tid:l.tid,n:l.n||1,p:lp(l),r:lr(l)};});
+  stLessons=(s.teachers||[]).map(function(t){return {tid:t.tid,p:t.p,r:t.r};});
   renderStLessons();
   openM('mStudent');
 }
@@ -615,13 +613,10 @@ function saveSt() {
     const p=S.partners.find(p=>p.id===pid);
     if(p){if(!p.studentIds)p.studentIds=[];if(!p.studentIds.includes(sid))p.studentIds.push(sid);}
   }
-  if(wk()){
-    const valid=stLessons.filter(function(l){return l.tid&&l.n>0;});
-    if(valid.length>0){
-      wk().lessons[sid]=valid.map(function(l){return {tid:l.tid,n:l.n||1,p:l.p||0,r:l.r||0};});
-    } else {
-      delete wk().lessons[sid];
-    }
+  const st=S.students.find(function(s){return s.id===sid;});
+  if(st){
+    const valid=stLessons.filter(function(l){return l.tid;});
+    st.teachers=valid.map(function(l){return {tid:l.tid,p:l.p||0,r:l.r||0};});
   }
   save(); closeM('mStudent'); render();
 }
