@@ -328,7 +328,7 @@ function renderSts() {
         <span class="ltag-name">${esc(t.name)}</span>
         <span class="ltag-info">${l.n}×${dur}мин</span>
         <span class="ltag-amt">${rub(lp(l)*l.n)}</span>
-        <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${l.ltid}">×</button>
+        <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${l.ltid||''}">×</button>
       </span>`;
     }).join('');
     tags += `<button class="add-l-btn" data-add-ls="${s.id}">+ урок</button>`;
@@ -735,7 +735,7 @@ function saveL() {
 }
 function removeL(sid,tid,ltid) {
   const w=wk(); if(!w?.lessons?.[sid]) return;
-  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&l.ltid===ltid));
+  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&(l.ltid||'')===(ltid||'')));
   save(); render();
 }
 
