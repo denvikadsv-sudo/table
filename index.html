@@ -184,6 +184,16 @@ input,select{font:inherit}
 .lprev{background:var(--surf2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:11px 13px;font-size:13px;color:var(--txt2);line-height:1.8;min-height:52px}
 .lprev strong{color:var(--txt)}
 
+/* STUDENT LESSONS IN CARD */
+.stl-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.stl-tch{flex:1;min-width:0;font-size:12px}
+.stl-num{width:52px;flex-shrink:0;font-size:12px}
+.stl-price{width:76px;flex-shrink:0;font-size:12px}
+.stl-del{width:24px;height:24px;border-radius:var(--r-sm);color:var(--txt3);font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:none;background:none}
+.stl-del:hover{background:var(--red-bg);color:var(--red)}
+.stl-add{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt3);padding:4px 8px;border-radius:var(--r-sm);border:none;background:none;cursor:pointer;margin-top:2px}
+.stl-add:hover{background:var(--acc-bg);color:var(--acc)}
+.stl-hdr{display:flex;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-bottom:4px}
 /* PAYMENT STATUS */
 .pay-btn{width:100%;padding:7px 10px;border-radius:var(--r-sm);font-size:12px;font-weight:700;text-align:center;border:1px solid;transition:all .15s;margin-top:10px;cursor:pointer;display:block}
 .pay-btn.paid{background:var(--grn-bg);color:var(--grn);border-color:transparent}
@@ -336,6 +346,18 @@ input,select{font:inherit}
         </div>
       </div>
       <div class="fg"><label>Партнёр (источник ученика)</label><select class="fi" id="fPartner"></select></div>
+      <div id="stLessonsWrap" style="border-top:1px solid var(--bd);margin-top:12px;padding-top:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:6px">Уроки этой недели</div>
+        <div class="stl-hdr">
+          <span style="flex:1">Учитель</span>
+          <span style="width:52px">Кол.</span>
+          <span style="width:76px">Цена ₽</span>
+          <span style="width:76px">Ставка ₽</span>
+          <span style="width:24px"></span>
+        </div>
+        <div id="stLessonsList"></div>
+        <button type="button" class="stl-add" id="btnAddStLesson">+ Добавить учителя</button>
+      </div>
     </div>
     <div class="mftr"><button class="btn-ghost" data-close="mStudent">Отмена</button><button class="btn-pri" id="btnSaveSt">Сохранить</button></div>
   </div>
@@ -1049,12 +1071,44 @@ const closeM = id => document.getElementById(id).classList.add('hide');
 
 /* ── STUDENT MODAL ────────────────────────────── */
 let editSid=null;
+let stLessons=[];
+
+function renderStLessons() {
+  const list=document.getElementById('stLessonsList');
+  if(!stLessons.length){list.innerHTML='';return;}
+  list.innerHTML=stLessons.map(function(l,i){
+    const opts=S.teachers.map(function(t){
+      return '<option value="'+t.id+'"'+(t.id===l.tid?' selected':'')+'>'+esc(t.name)+'</option>';
+    }).join('');
+    return '<div class="stl-row">'+
+      '<select class="fi stl-tch" onchange="stlTch('+i+',this.value)">'+opts+'</select>'+
+      '<input class="fi stl-num" type="number" min="1" value="'+(l.n||1)+'" oninput="stlUpd('+i+',\'n\',+this.value)" placeholder="Кол.">'+
+      '<input class="fi stl-price" type="number" min="0" value="'+(l.p!=null?l.p:'')+'" oninput="stlUpd('+i+',\'p\',+this.value)" placeholder="Цена">'+
+      '<input class="fi stl-price" type="number" min="0" value="'+(l.r!=null?l.r:'')+'" oninput="stlUpd('+i+',\'r\',+this.value)" placeholder="Ставка">'+
+      '<button class="stl-del" onclick="stlDel('+i+')">×</button>'+
+      '</div>';
+  }).join('');
+}
+function stlTch(i,tid){
+  stLessons[i].tid=tid;
+  const t=getT(tid);const lt=t&&t.types&&t.types[0];
+  if(lt){stLessons[i].p=lt.p;stLessons[i].r=lt.r;}
+  renderStLessons();
+}
+function stlUpd(i,field,val){stLessons[i][field]=val;}
+function stlDel(i){stLessons.splice(i,1);renderStLessons();}
+function addStLesson(){
+  const t=S.teachers[0];const lt=t&&t.types&&t.types[0];
+  stLessons.push({tid:t?t.id:'',n:1,p:lt?lt.p:0,r:lt?lt.r:0});
+  renderStLessons();
+}
+
 function openAddSt() {
-  editSid=null;
+  editSid=null;stLessons=[];
   document.getElementById('mStTitle').textContent='Новый ученик';
   ['fCls','fName','fGroup'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='active';
-  fillPartnerSel(null);
+  fillPartnerSel(null);renderStLessons();
   openM('mStudent'); setTimeout(()=>document.getElementById('fName').focus(),50);
 }
 function openEditSt(sid) {
@@ -1066,6 +1120,9 @@ function openEditSt(sid) {
   document.getElementById('fGroup').value=s.group||'';
   document.getElementById('fStatus').value=s.status||'active';
   fillPartnerSel(getStudentPartner(sid)?.id||null);
+  const ls=wk()&&wk().lessons&&wk().lessons[sid]?wk().lessons[sid]:[];
+  stLessons=ls.map(function(l){return {tid:l.tid,n:l.n||1,p:lp(l),r:lr(l)};});
+  renderStLessons();
   openM('mStudent');
 }
 function saveSt() {
@@ -1090,6 +1147,14 @@ function saveSt() {
   if(pid){
     const p=S.partners.find(p=>p.id===pid);
     if(p){if(!p.studentIds)p.studentIds=[];if(!p.studentIds.includes(sid))p.studentIds.push(sid);}
+  }
+  if(wk()){
+    const valid=stLessons.filter(function(l){return l.tid&&l.n>0;});
+    if(valid.length>0){
+      wk().lessons[sid]=valid.map(function(l){return {tid:l.tid,n:l.n||1,p:l.p||0,r:l.r||0};});
+    } else {
+      delete wk().lessons[sid];
+    }
   }
   save(); closeM('mStudent'); render();
 }
@@ -1505,10 +1570,7 @@ function saveWk() {
   const existing=Object.values(S.weeks).find(w=>w.startDate===startDate);
   if(existing){S.curWk=existing.id;save();render();closeM('mWeek');return;}
   const wid='w'+Date.now();
-  const _sids=sortedWkIds();
-  const _prev=_sids.length>0?S.weeks[_sids[_sids.length-1]]:null;
-  const _lessons=_prev?JSON.parse(JSON.stringify(_prev.lessons)):{};
-  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:_lessons,stBal:{}};
+  S.weeks[wid]={id:wid,label,startDate,startBal:0,lessons:{},stBal:{}};
   S.curWk=wid; save(); render(); closeM('mWeek');
 }
 function navWk(dir) {
@@ -1549,6 +1611,7 @@ document.getElementById('btnSaveGist').addEventListener('click',saveToGist);
 document.getElementById('btnLoadGist').addEventListener('click',loadFromGist);
 document.getElementById('btnAddSt').addEventListener('click',openAddSt);
 document.getElementById('btnSaveSt').addEventListener('click',saveSt);
+document.getElementById('btnAddStLesson').addEventListener('click',addStLesson);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
 document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
