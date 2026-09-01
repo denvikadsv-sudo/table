@@ -725,7 +725,7 @@ function saveL() {
   const n=parseInt(document.getElementById('fCount').value)||0;
   const lp=parseInt(document.getElementById('fLPrice').value)||0;
   const lr=parseInt(document.getElementById('fLRate').value)||0;
-  if(!tid||!ltid||n<1) return;
+  if(!tid||n<1) return;
   const w=wk(); if(!w) return;
   if(!w.lessons) w.lessons={};
   if(!w.lessons[lessSid]) w.lessons[lessSid]=[];
