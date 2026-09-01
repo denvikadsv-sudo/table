@@ -266,6 +266,7 @@ function renderBal() {
 }
 
 function getPrimaryTid(s, w) {
+  if(s.teachers&&s.teachers.length) return s.teachers[0].tid;
   const ls=w?.lessons?.[s.id]||[];
   return ls.length>0 ? ls[0].tid : null;
 }
