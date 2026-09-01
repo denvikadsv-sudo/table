@@ -628,6 +628,20 @@ function fillTeacherSel() {
     S.teachers.map(t=>`<option value="${t.id}">${esc(t.name)} — ${esc(t.sub)}</option>`).join('');
   fillLTypeSel();
 }
+function getStTeachers(sid) {
+  const s=S.students.find(s=>s.id===sid);
+  return s&&s.teachers&&s.teachers.length?s.teachers:null;
+}
+function prefillFromStTeacher() {
+  const st=getStTeachers(lessSid); if(!st) return;
+  const tid=document.getElementById('fTeacher').value;
+  const entry=st.find(function(t){return t.tid===tid;});
+  if(entry){
+    document.getElementById('fLPrice').value=entry.p||0;
+    document.getElementById('fLRate').value=entry.r||0;
+  }
+  updatePrev();
+}
 function fillLTypeSel() {
   const t=getT(document.getElementById('fTeacher').value);
   document.getElementById('fLType').innerHTML=t
@@ -647,17 +661,18 @@ function prefillPrices(keepCustom) {
 }
 function updatePrev() {
   const t=getT(document.getElementById('fTeacher').value);
-  const lt=getLT(t,document.getElementById('fLType').value);
   const n=parseInt(document.getElementById('fCount').value)||0;
   const lp=parseInt(document.getElementById('fLPrice').value)||0;
   const lr=parseInt(document.getElementById('fLRate').value)||0;
   const el=document.getElementById('lPrev');
-  if(!t||!lt||n<1){el.textContent='Укажите учителя, тип и количество';return;}
+  if(!t||n<1){el.textContent='Укажите учителя и количество';return;}
   const rv=lp*n,co=lr*n,pr=rv-co;
-  el.innerHTML=`<strong>${esc(t.name)}</strong> · ${n}×${lt.dur} мин<br>
-    Клиент: <strong style="color:var(--grn)">${rub(rv)}</strong> ·
-    Учителю: <strong style="color:var(--red)">${rub(co)}</strong> ·
-    Прибыль: <strong style="color:var(--acc)">${rub(pr)}</strong>`;
+  const lt=getLT(t,document.getElementById('fLType').value);
+  const dur=lt?' · '+n+'×'+lt.dur+' мин':' · '+n+' ур.';
+  el.innerHTML='<strong>'+esc(t.name)+'</strong>'+dur+'<br>'+
+    'Клиент: <strong style="color:var(--grn)">'+rub(rv)+'</strong> · '+
+    'Учителю: <strong style="color:var(--red)">'+rub(co)+'</strong> · '+
+    'Прибыль: <strong style="color:var(--acc)">'+rub(pr)+'</strong>';
 }
 function setCount(n) {
   document.getElementById('fCount').value=n;
@@ -688,13 +703,24 @@ function toggleCountPicker(e) {
   }
 }
 function openAddL(sid) {
-  lessSid=sid; fillTeacherSel();
+  lessSid=sid;
+  const stTch=getStTeachers(sid);
+  if(stTch){
+    document.getElementById('fTeacher').innerHTML=stTch.map(function(st){
+      const t=getT(st.tid); return '<option value="'+(t?t.id:'')+'">'+(t?esc(t.name):'?')+'</option>';
+    }).join('');
+    document.getElementById('fLTypeRow').classList.add('hide');
+    prefillFromStTeacher();
+  } else {
+    fillTeacherSel();
+    document.getElementById('fLTypeRow').classList.remove('hide');
+  }
   setCount(1);
   openM('mLesson'); setTimeout(()=>document.getElementById('fCountBtn').focus(),50);
 }
 function saveL() {
   const tid=document.getElementById('fTeacher').value;
-  const ltid=document.getElementById('fLType').value;
+  const ltid=document.getElementById('fLTypeRow').classList.contains('hide')?null:document.getElementById('fLType').value;
   const n=parseInt(document.getElementById('fCount').value)||0;
   const lp=parseInt(document.getElementById('fLPrice').value)||0;
   const lr=parseInt(document.getElementById('fLRate').value)||0;
@@ -703,12 +729,16 @@ function saveL() {
   if(!w.lessons) w.lessons={};
   if(!w.lessons[lessSid]) w.lessons[lessSid]=[];
   const ex=w.lessons[lessSid].find(l=>l.tid===tid&&l.ltid===ltid);
-  if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,ltid,n,p:lp,r:lr});
+  if(ltid){
+    if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,ltid,n,p:lp,r:lr});
+  } else {
+    if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,n,p:lp,r:lr});
+  }
   save(); closeM('mLesson'); render();
 }
 function removeL(sid,tid,ltid) {
   const w=wk(); if(!w?.lessons?.[sid]) return;
-  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&l.ltid===ltid));
+  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&(ltid?l.ltid===ltid:!l.ltid)));
   save(); render();
 }
 
@@ -1075,7 +1105,9 @@ document.getElementById('btnAddSt').addEventListener('click',openAddSt);
 document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnAddStLesson').addEventListener('click',addStLesson);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
-document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
+document.getElementById('fTeacher').addEventListener('change',function(){
+  if(lessSid&&getStTeachers(lessSid)){prefillFromStTeacher();}else{fillLTypeSel();}
+});
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
 document.getElementById('fCountBtn').addEventListener('click',toggleCountPicker);
 document.addEventListener('click',e=>{
