@@ -633,16 +633,6 @@ function getStTeachers(sid) {
   const s=S.students.find(s=>s.id===sid);
   return s&&s.teachers&&s.teachers.length?s.teachers:null;
 }
-function prefillFromStTeacher() {
-  const st=getStTeachers(lessSid); if(!st) return;
-  const tid=document.getElementById('fTeacher').value;
-  const entry=st.find(function(t){return t.tid===tid;});
-  if(entry){
-    document.getElementById('fLPrice').value=entry.p||0;
-    document.getElementById('fLRate').value=entry.r||0;
-  }
-  updatePrev();
-}
 function fillLTypeSel() {
   const t=getT(document.getElementById('fTeacher').value);
   document.getElementById('fLType').innerHTML=t
@@ -657,8 +647,20 @@ function prefillPrices(keepCustom) {
   if(!lt) return;
   if(keepCustom) return;
   const existing=lessSid&&wk()?.lessons?.[lessSid]?.find(l=>l.tid===t?.id&&l.ltid===lt.id);
-  document.getElementById('fLPrice').value=existing?.p!==undefined?existing.p:lt.p;
-  document.getElementById('fLRate').value=existing?.r!==undefined?existing.r:lt.r;
+  if(existing){
+    document.getElementById('fLPrice').value=existing.p!==undefined?existing.p:lt.p;
+    document.getElementById('fLRate').value=existing.r!==undefined?existing.r:lt.r;
+    return;
+  }
+  const stTch=getStTeachers(lessSid);
+  const stEntry=stTch&&t?stTch.find(function(x){return x.tid===t.id;}):null;
+  if(stEntry){
+    document.getElementById('fLPrice').value=stEntry.p!=null?stEntry.p:lt.p;
+    document.getElementById('fLRate').value=stEntry.r!=null?stEntry.r:lt.r;
+    return;
+  }
+  document.getElementById('fLPrice').value=lt.p;
+  document.getElementById('fLRate').value=lt.r;
 }
 function updatePrev() {
   const t=getT(document.getElementById('fTeacher').value);
@@ -708,38 +710,32 @@ function openAddL(sid) {
   const stTch=getStTeachers(sid);
   if(stTch){
     document.getElementById('fTeacher').innerHTML=stTch.map(function(st){
-      const t=getT(st.tid); return '<option value="'+(t?t.id:'')+'">'+(t?esc(t.name):'?')+'</option>';
+      const t=getT(st.tid); return t?'<option value="'+t.id+'">'+esc(t.name)+' — '+esc(t.sub)+'</option>':'';
     }).join('');
-    document.getElementById('fLTypeRow').classList.add('hide');
-    prefillFromStTeacher();
+    fillLTypeSel();
   } else {
     fillTeacherSel();
-    document.getElementById('fLTypeRow').classList.remove('hide');
   }
   setCount(1);
   openM('mLesson'); setTimeout(()=>document.getElementById('fCountBtn').focus(),50);
 }
 function saveL() {
   const tid=document.getElementById('fTeacher').value;
-  const ltid=document.getElementById('fLTypeRow').classList.contains('hide')?null:document.getElementById('fLType').value;
+  const ltid=document.getElementById('fLType').value;
   const n=parseInt(document.getElementById('fCount').value)||0;
   const lp=parseInt(document.getElementById('fLPrice').value)||0;
   const lr=parseInt(document.getElementById('fLRate').value)||0;
-  if(!tid||n<1) return;
+  if(!tid||!ltid||n<1) return;
   const w=wk(); if(!w) return;
   if(!w.lessons) w.lessons={};
   if(!w.lessons[lessSid]) w.lessons[lessSid]=[];
   const ex=w.lessons[lessSid].find(l=>l.tid===tid&&l.ltid===ltid);
-  if(ltid){
-    if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,ltid,n,p:lp,r:lr});
-  } else {
-    if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,n,p:lp,r:lr});
-  }
+  if(ex){ex.n+=n;ex.p=lp;ex.r=lr;} else w.lessons[lessSid].push({tid,ltid,n,p:lp,r:lr});
   save(); closeM('mLesson'); render();
 }
 function removeL(sid,tid,ltid) {
   const w=wk(); if(!w?.lessons?.[sid]) return;
-  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&(ltid?l.ltid===ltid:!l.ltid)));
+  w.lessons[sid]=w.lessons[sid].filter(l=>!(l.tid===tid&&l.ltid===ltid));
   save(); render();
 }
 
@@ -1106,9 +1102,7 @@ document.getElementById('btnAddSt').addEventListener('click',openAddSt);
 document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnAddStLesson').addEventListener('click',addStLesson);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
-document.getElementById('fTeacher').addEventListener('change',function(){
-  if(lessSid&&getStTeachers(lessSid)){prefillFromStTeacher();}else{fillLTypeSel();}
-});
+document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
 document.getElementById('fCountBtn').addEventListener('click',toggleCountPicker);
 document.addEventListener('click',e=>{
