@@ -1,0 +1,39 @@
+name: Bump cache-busting version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.js'
+      - 'style.css'
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Compute content hashes and update index.html
+        run: |
+          JS_HASH=$(sha256sum app.js | cut -c1-10)
+          CSS_HASH=$(sha256sum style.css | cut -c1-10)
+          sed -i -E "s/app\.js\?v=[a-zA-Z0-9]+/app.js?v=${JS_HASH}/" index.html
+          sed -i -E "s/style\.css\?v=[a-zA-Z0-9]+/style.css?v=${CSS_HASH}/" index.html
+
+      - name: Commit updated version if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- index.html; then
+            git add index.html
+            git commit -m "chore: bump cache-busting version [skip ci]"
+            git push
+          else
+            echo "index.html already up to date, nothing to commit"
+          fi
