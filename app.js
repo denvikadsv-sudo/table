@@ -312,7 +312,7 @@ function renderSts() {
       const tid=getPrimaryTid(s,w);
       if(tid&&tid!==lastTid){
         const t=getT(tid);
-        if(t) rows+=`<tr class="tch-sep"><td colspan="9"><span class="ldot" style="background:${t.col};width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle"></span>${esc(t.name)}</td></tr>`;
+        if(t) rows+=`<tr class="tch-sep"><td colspan="9"><span class="ldot" style="background:${t.col};width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle"></span>${esc(t.full||t.name)}</td></tr>`;
         lastTid=tid;
       }
     }
@@ -326,7 +326,7 @@ function renderSts() {
       const dur=lt?.dur||'?';
       return `<span class="ltag">
         <span class="ldot" style="background:${t.col}"></span>
-        <span class="ltag-name">${esc(t.name)}</span>
+        <span class="ltag-name">${esc(t.full||t.name)}</span>
         <span class="ltag-info">${l.n}×${dur}мин</span>
         <span class="ltag-amt">${rub(lp(l)*l.n)}</span>
         <button class="ltag-rm" data-rm-sid="${s.id}" data-rm-tid="${l.tid}" data-rm-ltid="${l.ltid||''}">×</button>
@@ -390,7 +390,7 @@ function renderSum() {
     html+=`<div class="scard">
       <div class="scard-hdr">
         <span class="ldot" style="background:${t.col};width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-        <span class="scard-name">${esc(t.name)}</span><span class="scard-sub">${esc(t.sub)}</span>
+        <span class="scard-name">${esc(t.full||t.name)}</span><span class="scard-sub">${esc(t.sub)}</span>
       </div>
       <div class="srow"><span>Уроков</span><span class="srval">${tc.n}</span></div>
       <div class="srow"><span>Выручка</span><span class="srval" style="color:var(--grn)">${rub(tc.rev)}</span></div>
@@ -547,7 +547,7 @@ function renderStLessons() {
   if(!stLessons.length){list.innerHTML='';return;}
   list.innerHTML=stLessons.map(function(l,i){
     const opts=S.teachers.map(function(t){
-      return '<option value="'+t.id+'"'+(t.id===l.tid?' selected':'')+'>'+esc(t.name)+'</option>';
+      return '<option value="'+t.id+'"'+(t.id===l.tid?' selected':'')+'>'+esc(t.full||t.name)+'</option>';
     }).join('');
     return '<div class="stl-row">'+
       '<select class="fi stl-tch" onchange="stlTch('+i+',this.value)">'+opts+'</select>'+
@@ -627,7 +627,7 @@ function saveSt() {
 let lessSid=null;
 function fillTeacherSel() {
   document.getElementById('fTeacher').innerHTML=
-    S.teachers.map(t=>`<option value="${t.id}">${esc(t.name)} — ${esc(t.sub)}</option>`).join('');
+    S.teachers.map(t=>`<option value="${t.id}">${esc(t.full||t.name)} — ${esc(t.sub)}</option>`).join('');
   fillLTypeSel();
 }
 function getStTeachers(sid) {
@@ -673,7 +673,7 @@ function updatePrev() {
   const rv=lp*n,co=lr*n,pr=rv-co;
   const lt=getLT(t,document.getElementById('fLType').value);
   const dur=lt?' · '+n+'×'+lt.dur+' мин':' · '+n+' ур.';
-  el.innerHTML='<strong>'+esc(t.name)+'</strong>'+dur+'<br>'+
+  el.innerHTML='<strong>'+esc(t.full||t.name)+'</strong>'+dur+'<br>'+
     'Клиент: <strong style="color:var(--grn)">'+rub(rv)+'</strong> · '+
     'Учителю: <strong style="color:var(--red)">'+rub(co)+'</strong> · '+
     'Прибыль: <strong style="color:var(--acc)">'+rub(pr)+'</strong>';
@@ -711,7 +711,7 @@ function openAddL(sid) {
   const stTch=getStTeachers(sid);
   if(stTch){
     document.getElementById('fTeacher').innerHTML=stTch.map(function(st){
-      const t=getT(st.tid); return t?'<option value="'+t.id+'">'+esc(t.name)+' — '+esc(t.sub)+'</option>':'';
+      const t=getT(st.tid); return t?'<option value="'+t.id+'">'+esc(t.full||t.name)+' — '+esc(t.sub)+'</option>':'';
     }).join('');
     fillLTypeSel();
   } else {
