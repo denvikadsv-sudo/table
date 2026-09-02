@@ -180,7 +180,8 @@ input,select{font:inherit}
 .stl-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
 .stl-tch{flex:1;min-width:0;font-size:12px}
 .stl-num{width:52px;flex-shrink:0;font-size:12px}
-.stl-price{width:76px;flex-shrink:0;font-size:12px}
+.stl-type{width:64px;flex-shrink:0;font-size:12px}
+.stl-price{width:70px;flex-shrink:0;font-size:12px}
 .stl-del{width:24px;height:24px;border-radius:var(--r-sm);color:var(--txt3);font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:none;background:none}
 .stl-del:hover{background:var(--red-bg);color:var(--red)}
 .stl-add{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt3);padding:4px 8px;border-radius:var(--r-sm);border:none;background:none;cursor:pointer;margin-top:2px}

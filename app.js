@@ -549,8 +549,13 @@ function renderStLessons() {
     const opts=S.teachers.map(function(t){
       return '<option value="'+t.id+'"'+(t.id===l.tid?' selected':'')+'>'+esc(t.full||t.name)+'</option>';
     }).join('');
+    const t=getT(l.tid);
+    const ltOpts=t?t.types.map(function(lt){
+      return '<option value="'+lt.id+'"'+(lt.id===l.ltid?' selected':'')+'>'+lt.dur+' мин</option>';
+    }).join(''):'';
     return '<div class="stl-row">'+
       '<select class="fi stl-tch" onchange="stlTch('+i+',this.value)">'+opts+'</select>'+
+      '<select class="fi stl-type" onchange="stlType('+i+',this.value)">'+ltOpts+'</select>'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.p!=null?l.p:'')+'" oninput="stlUpd('+i+',\'p\',+this.value)" placeholder="Цена">'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.r!=null?l.r:'')+'" oninput="stlUpd('+i+',\'r\',+this.value)" placeholder="Ставка">'+
       '<button class="stl-del" onclick="stlDel('+i+')">×</button>'+
@@ -560,6 +565,13 @@ function renderStLessons() {
 function stlTch(i,tid){
   stLessons[i].tid=tid;
   const t=getT(tid);const lt=t&&t.types&&t.types[0];
+  stLessons[i].ltid=lt?lt.id:null;
+  if(lt){stLessons[i].p=lt.p;stLessons[i].r=lt.r;}
+  renderStLessons();
+}
+function stlType(i,ltid){
+  stLessons[i].ltid=ltid;
+  const t=getT(stLessons[i].tid);const lt=getLT(t,ltid);
   if(lt){stLessons[i].p=lt.p;stLessons[i].r=lt.r;}
   renderStLessons();
 }
@@ -567,7 +579,7 @@ function stlUpd(i,field,val){stLessons[i][field]=val;}
 function stlDel(i){stLessons.splice(i,1);renderStLessons();}
 function addStLesson(){
   const t=S.teachers[0];const lt=t&&t.types&&t.types[0];
-  stLessons.push({tid:t?t.id:'',p:lt?lt.p:0,r:lt?lt.r:0});
+  stLessons.push({tid:t?t.id:'',ltid:lt?lt.id:null,p:lt?lt.p:0,r:lt?lt.r:0});
   renderStLessons();
 }
 
@@ -588,7 +600,7 @@ function openEditSt(sid) {
   document.getElementById('fGroup').value=s.group||'';
   document.getElementById('fStatus').value=s.status||'active';
   fillPartnerSel(getStudentPartner(sid)?.id||null);
-  stLessons=(s.teachers||[]).map(function(t){return {tid:t.tid,p:t.p,r:t.r};});
+  stLessons=(s.teachers||[]).map(function(t){return {tid:t.tid,ltid:t.ltid,p:t.p,r:t.r};});
   renderStLessons();
   openM('mStudent');
 }
@@ -618,7 +630,7 @@ function saveSt() {
   const st=S.students.find(function(s){return s.id===sid;});
   if(st){
     const valid=stLessons.filter(function(l){return l.tid;});
-    st.teachers=valid.map(function(l){return {tid:l.tid,p:l.p||0,r:l.r||0};});
+    st.teachers=valid.map(function(l){return {tid:l.tid,ltid:l.ltid,p:l.p||0,r:l.r||0};});
   }
   save(); closeM('mStudent'); render();
 }
