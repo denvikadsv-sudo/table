@@ -271,7 +271,7 @@ function getPrimaryTid(s, w) {
   return ls.length>0 ? ls[0].tid : null;
 }
 function sortStudents(students, w) {
-  const order={active:0,vacation:1,finished:2};
+  const order={active:0,trial:1,vacation:2,finished:3};
   const tidOrder={};
   S.teachers.forEach((t,i)=>{tidOrder[t.id]=i;});
   return [...students].sort((a,b)=>{
@@ -303,7 +303,8 @@ function renderSts() {
     const balEnd=getBalEnd(s.id,S.curWk);
     totBs+=balStart; totInc+=income; totEnd+=balEnd;
     if(s.status!==lastStatus){
-      if(s.status==='vacation') rows+=`<tr class="st-sep"><td colspan="9">🌴 Каникулы</td></tr>`;
+      if(s.status==='trial') rows+=`<tr class="st-sep"><td colspan="9">🧪 Пробный</td></tr>`;
+      else if(s.status==='vacation') rows+=`<tr class="st-sep"><td colspan="9">🌴 Каникулы</td></tr>`;
       else if(s.status==='finished') rows+=`<tr class="st-sep"><td colspan="9">✓ Завершили</td></tr>`;
       lastStatus=s.status; lastTid=null;
     }
@@ -317,8 +318,8 @@ function renderSts() {
     }
     const pTch=s.status==='active'?getT(getPrimaryTid(s,w)):null;
     const stP=getStudentPartner(s.id);
-    const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':'badge-vac';
-    const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':'Каникулы';
+    const bCls=s.status==='active'?'badge-on':s.status==='finished'?'badge-fin':s.status==='trial'?'badge-trial':'badge-vac';
+    const bTxt=s.status==='active'?'Учащийся':s.status==='finished'?'Завершил':s.status==='trial'?'Пробный':'Каникулы';
     let tags=ls.map(l => {
       const t=getT(l.tid); const lt=getLT(t,l.ltid);
       if(!t) return '';

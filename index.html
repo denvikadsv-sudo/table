@@ -99,7 +99,7 @@
       <div class="frow">
         <div class="fg"><label>Группа (необяз.)</label><input class="fi" id="fGroup" placeholder="Ученики Елены"></div>
         <div class="fg w120"><label>Статус</label>
-          <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="vacation">Каникулы</option><option value="finished">Завершил</option></select>
+          <select class="fi" id="fStatus"><option value="active">Учащийся</option><option value="trial">Пробный</option><option value="vacation">Каникулы</option><option value="finished">Завершил</option></select>
         </div>
       </div>
       <div class="fg"><label>Партнёр (источник ученика)</label><select class="fi" id="fPartner"></select></div>
@@ -282,6 +282,7 @@
 
 <div id="statusPop" class="status-pop hide">
   <button data-set-status="active"><span class="sp-dot" style="background:var(--grn)"></span>Учащийся</button>
+  <button data-set-status="trial"><span class="sp-dot" style="background:var(--acc)"></span>Пробный</button>
   <button data-set-status="vacation"><span class="sp-dot" style="background:var(--amb)"></span>Каникулы</button>
   <button data-set-status="finished"><span class="sp-dot" style="background:var(--txt3)"></span>Завершил</button>
 </div>
