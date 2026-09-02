@@ -666,7 +666,7 @@ function prefillPrices(keepCustom) {
     return;
   }
   const stTch=getStTeachers(lessSid);
-  const stEntry=stTch&&t?stTch.find(function(x){return x.tid===t.id;}):null;
+  const stEntry=stTch&&t?stTch.find(function(x){return x.tid===t.id&&x.ltid===lt.id;}):null;
   if(stEntry){
     document.getElementById('fLPrice').value=stEntry.p!=null?stEntry.p:lt.p;
     document.getElementById('fLRate').value=stEntry.r!=null?stEntry.r:lt.r;
@@ -674,6 +674,16 @@ function prefillPrices(keepCustom) {
   }
   document.getElementById('fLPrice').value=lt.p;
   document.getElementById('fLRate').value=lt.r;
+}
+function selectStType() {
+  const stTch=getStTeachers(lessSid); if(!stTch) return;
+  const tid=document.getElementById('fTeacher').value;
+  const entry=stTch.find(function(x){return x.tid===tid;});
+  if(entry&&entry.ltid){
+    document.getElementById('fLType').value=entry.ltid;
+    prefillPrices();
+    updatePrev();
+  }
 }
 function updatePrev() {
   const t=getT(document.getElementById('fTeacher').value);
@@ -726,6 +736,7 @@ function openAddL(sid) {
       const t=getT(st.tid); return t?'<option value="'+t.id+'">'+esc(t.full||t.name)+' — '+esc(t.sub)+'</option>':'';
     }).join('');
     fillLTypeSel();
+    selectStType();
   } else {
     fillTeacherSel();
   }
@@ -1115,7 +1126,7 @@ document.getElementById('btnAddSt').addEventListener('click',openAddSt);
 document.getElementById('btnSaveSt').addEventListener('click',saveSt);
 document.getElementById('btnAddStLesson').addEventListener('click',addStLesson);
 document.getElementById('btnSaveL').addEventListener('click',saveL);
-document.getElementById('fTeacher').addEventListener('change',fillLTypeSel);
+document.getElementById('fTeacher').addEventListener('change',function(){fillLTypeSel();selectStType();});
 document.getElementById('fLType').addEventListener('change',()=>{prefillPrices();updatePrev();});
 document.getElementById('fCountBtn').addEventListener('click',toggleCountPicker);
 document.addEventListener('click',e=>{
