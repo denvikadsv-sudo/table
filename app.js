@@ -551,7 +551,7 @@ function renderStLessons() {
     }).join('');
     const t=getT(l.tid);
     const ltOpts=t?t.types.map(function(lt){
-      return '<option value="'+lt.id+'"'+(lt.id===l.ltid?' selected':'')+'>'+lt.dur+' мин</option>';
+      return '<option value="'+lt.id+'"'+(lt.id===l.ltid?' selected':'')+'>'+lt.dur+' мин · '+lt.p.toLocaleString('ru-RU')+'₽</option>';
     }).join(''):'';
     return '<div class="stl-row">'+
       '<select class="fi stl-tch" onchange="stlTch('+i+',this.value)">'+opts+'</select>'+
