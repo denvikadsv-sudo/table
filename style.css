@@ -67,11 +67,12 @@ input,select{font:inherit}
 .main{padding:16px 20px;max-width:1440px;margin:0 auto}
 
 /* TABS */
-.tabs{display:flex;align-items:center;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--bd)}
-.tab{padding:8px 16px;font-size:13px;font-weight:600;color:var(--txt2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .13s}
+.tabs{display:flex;align-items:center;gap:8px;margin-bottom:14px;border-bottom:1px solid var(--bd)}
+.tabs-scroll{display:flex;align-items:center;gap:2px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:thin}
+.tabs-scroll::-webkit-scrollbar{height:4px}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;color:var(--txt2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .13s;white-space:nowrap;flex-shrink:0}
 .tab:hover{color:var(--txt)}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc)}
-.tabs-gap{flex:1}
 .btn-pri{background:var(--acc);color:#fff;padding:7px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:700;transition:opacity .13s;display:inline-flex;align-items:center;gap:6px}
 .btn-pri:hover{opacity:.88}
 .btn-pri:disabled{opacity:.5;cursor:not-allowed}

@@ -456,6 +456,68 @@ function renderTch() {
   document.getElementById('tchGrid').innerHTML=html;
 }
 
+/* ── POTENTIAL PROFIT ────────────────────────── */
+const WEEKS_PER_MONTH=4.33;
+function sitemHtml(lbl,val,cls){
+  return '<div class="sitem"><div class="slbl">'+lbl+'</div><div class="sval '+(cls||'')+'">'+val+'</div></div>';
+}
+function renderPotential() {
+  const grid=document.getElementById('potGrid');
+  const withTch=S.students.filter(function(s){return s.teachers&&s.teachers.length;});
+  if(!withTch.length){
+    grid.innerHTML='<div class="empty-msg" style="padding:24px;text-align:center;color:var(--txt3)">Нет учеников с назначенными учителями. Добавь учителей в карточке ученика.</div>';
+    recalcPotSummary();
+    return;
+  }
+  let html='';
+  withTch.forEach(function(s){
+    let rows='';
+    s.teachers.forEach(function(st,i){
+      const t=getT(st.tid);
+      const lt=getLT(t,st.ltid);
+      const wn=st.wn||0;
+      const rev=(st.p||0)*wn;
+      rows+='<div class="rrow" style="grid-template-columns:1fr 68px 88px 96px">'+
+        '<span style="display:flex;align-items:center;gap:6px;color:var(--txt2)">'+
+          (t?'<span class="ldot" style="background:'+t.col+'"></span>':'')+
+          esc(t?t.name:'?')+(lt?' · '+lt.dur+' мин':'')+
+        '</span>'+
+        '<input class="fi pot-wn" type="number" min="0" value="'+(wn||'')+'" placeholder="0" data-pot-sid="'+s.id+'" data-pot-idx="'+i+'" style="width:60px;padding:5px 6px;font-size:12px;text-align:center">'+
+        '<span class="r pot-rev" style="color:var(--grn)">'+rub(rev)+'</span>'+
+        '<span class="r pot-mo" style="color:var(--txt2)">'+rub(rev*WEEKS_PER_MONTH)+'</span>'+
+      '</div>';
+    });
+    html+='<div class="tcard">'+
+      '<div class="tcard-hdr"><div><h3>'+esc(s.name||'—')+'</h3>'+(s.cls?'<p>'+esc(s.cls)+' класс</p>':'')+'</div></div>'+
+      '<div class="rrow rhdr" style="grid-template-columns:1fr 68px 88px 96px"><span>Учитель</span><span class="r">Уроков/нед</span><span class="r">Доход/нед</span><span class="r">Доход/мес</span></div>'+
+      rows+
+    '</div>';
+  });
+  grid.innerHTML=html;
+  recalcPotSummary();
+}
+function updatePotSummary(rev,cost) {
+  const el=document.getElementById('potSummary'); if(!el) return;
+  const profit=rev-cost;
+  el.innerHTML=
+    sitemHtml('Доход/нед',rub(rev),'grn')+
+    sitemHtml('Доход/мес',rub(rev*WEEKS_PER_MONTH),'grn')+
+    sitemHtml('Учителям/нед',rub(cost),'red')+
+    sitemHtml('Учителям/мес',rub(cost*WEEKS_PER_MONTH),'red')+
+    sitemHtml('Прибыль/нед',rub(profit),'acc')+
+    sitemHtml('Прибыль/мес',rub(profit*WEEKS_PER_MONTH),'acc');
+}
+function recalcPotSummary() {
+  let rev=0,cost=0;
+  S.students.forEach(function(s){
+    (s.teachers||[]).forEach(function(t){
+      const wn=t.wn||0;
+      rev+=(t.p||0)*wn; cost+=(t.r||0)*wn;
+    });
+  });
+  updatePotSummary(rev,cost);
+}
+
 function renderSyncCard() {
   const card=document.getElementById('syncCard');
   if(!card) return;
@@ -1095,13 +1157,28 @@ function navWk(dir) {
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  ['students','summary','teachers','settings'].forEach(t=>{
+  ['students','summary','teachers','potential','settings'].forEach(t=>{
     document.getElementById('tab-'+t).classList.toggle('hide',t!==btn.dataset.tab);
   });
   if(btn.dataset.tab==='summary') renderSum();
   if(btn.dataset.tab==='teachers') renderTch();
+  if(btn.dataset.tab==='potential') renderPotential();
   if(btn.dataset.tab==='settings') { renderSettings(); renderSyncCard(); }
 }));
+
+document.getElementById('potGrid').addEventListener('input',function(e){
+  const inp=e.target.closest('.pot-wn'); if(!inp) return;
+  const sid=inp.dataset.potSid, idx=+inp.dataset.potIdx;
+  const s=S.students.find(function(x){return x.id===sid;}); if(!s||!s.teachers) return;
+  const entry=s.teachers[idx]; if(!entry) return;
+  entry.wn=parseInt(inp.value)||0;
+  save();
+  const row=inp.closest('.rrow');
+  const rev=(entry.p||0)*entry.wn;
+  row.querySelector('.pot-rev').textContent=rub(rev);
+  row.querySelector('.pot-mo').textContent=rub(rev*WEEKS_PER_MONTH);
+  recalcPotSummary();
+});
 
 document.getElementById('wkSel').addEventListener('change',e=>{S.curWk=e.target.value;save();render();});
 document.getElementById('btnPrev').addEventListener('click',()=>navWk(-1));
