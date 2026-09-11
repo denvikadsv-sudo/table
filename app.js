@@ -694,6 +694,16 @@ function saveSt() {
   if(st){
     const valid=stLessons.filter(function(l){return l.tid;});
     st.teachers=valid.map(function(l){return {tid:l.tid,ltid:l.ltid,p:l.p||0,r:l.r||0,wn:l.wn||0};});
+    const w=wk();
+    if(w){
+      if(!w.lessons) w.lessons={};
+      const withCount=valid.filter(function(l){return l.wn>0;});
+      if(withCount.length){
+        w.lessons[sid]=withCount.map(function(l){return {tid:l.tid,ltid:l.ltid,n:l.wn,p:l.p||0,r:l.r||0};});
+      } else {
+        delete w.lessons[sid];
+      }
+    }
   }
   save(); closeM('mStudent'); render();
 }
