@@ -620,6 +620,7 @@ function renderStLessons() {
       '<select class="fi stl-type" onchange="stlType('+i+',this.value)">'+ltOpts+'</select>'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.p!=null?l.p:'')+'" oninput="stlUpd('+i+',\'p\',+this.value)" placeholder="Цена">'+
       '<input class="fi stl-price" type="number" min="0" value="'+(l.r!=null?l.r:'')+'" oninput="stlUpd('+i+',\'r\',+this.value)" placeholder="Ставка">'+
+      '<input class="fi stl-num" type="number" min="0" value="'+(l.wn!=null?l.wn:'')+'" oninput="stlUpd('+i+',\'wn\',+this.value)" placeholder="0">'+
       '<button class="stl-del" onclick="stlDel('+i+')">×</button>'+
       '</div>';
   }).join('');
@@ -662,7 +663,7 @@ function openEditSt(sid) {
   document.getElementById('fGroup').value=s.group||'';
   document.getElementById('fStatus').value=s.status||'active';
   fillPartnerSel(getStudentPartner(sid)?.id||null);
-  stLessons=(s.teachers||[]).map(function(t){return {tid:t.tid,ltid:t.ltid,p:t.p,r:t.r};});
+  stLessons=(s.teachers||[]).map(function(t){return {tid:t.tid,ltid:t.ltid,p:t.p,r:t.r,wn:t.wn};});
   renderStLessons();
   openM('mStudent');
 }
@@ -692,7 +693,7 @@ function saveSt() {
   const st=S.students.find(function(s){return s.id===sid;});
   if(st){
     const valid=stLessons.filter(function(l){return l.tid;});
-    st.teachers=valid.map(function(l){return {tid:l.tid,ltid:l.ltid,p:l.p||0,r:l.r||0};});
+    st.teachers=valid.map(function(l){return {tid:l.tid,ltid:l.ltid,p:l.p||0,r:l.r||0,wn:l.wn||0};});
   }
   save(); closeM('mStudent'); render();
 }
