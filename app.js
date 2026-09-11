@@ -745,8 +745,8 @@ function selectStType() {
   if(entry&&entry.ltid){
     document.getElementById('fLType').value=entry.ltid;
     prefillPrices();
-    updatePrev();
   }
+  setCount(entry&&entry.wn>0?entry.wn:1);
 }
 function updatePrev() {
   const t=getT(document.getElementById('fTeacher').value);
@@ -802,8 +802,8 @@ function openAddL(sid) {
     selectStType();
   } else {
     fillTeacherSel();
+    setCount(1);
   }
-  setCount(1);
   openM('mLesson'); setTimeout(()=>document.getElementById('fCountBtn').focus(),50);
 }
 function saveL() {
