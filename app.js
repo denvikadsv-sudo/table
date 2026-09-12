@@ -489,7 +489,7 @@ function renderPotential() {
     });
     html+='<div class="tcard">'+
       '<div class="tcard-hdr"><div><h3>'+esc(s.name||'—')+'</h3>'+(s.cls?'<p>'+esc(s.cls)+' класс</p>':'')+'</div></div>'+
-      '<div class="rrow rhdr" style="grid-template-columns:1fr 68px 88px 96px"><span>Учитель</span><span class="r">Уроков/нед</span><span class="r">Доход/нед</span><span class="r">Доход/мес</span></div>'+
+      '<div class="rrow rhdr" style="grid-template-columns:1fr 68px 88px 96px"><span>Учитель</span><span class="r">Уроков/нед</span><span class="r">Прибыль/нед</span><span class="r">Прибыль/мес</span></div>'+
       rows+
     '</div>';
   });
