@@ -476,15 +476,15 @@ function renderPotential() {
       const t=getT(st.tid);
       const lt=getLT(t,st.ltid);
       const wn=st.wn||0;
-      const rev=(st.p||0)*wn;
+      const profit=((st.p||0)-(st.r||0))*wn;
       rows+='<div class="rrow" style="grid-template-columns:1fr 68px 88px 96px">'+
         '<span style="display:flex;align-items:center;gap:6px;color:var(--txt2)">'+
           (t?'<span class="ldot" style="background:'+t.col+'"></span>':'')+
           esc(t?t.name:'?')+(lt?' · '+lt.dur+' мин':'')+
         '</span>'+
         '<input class="fi pot-wn" type="number" min="0" value="'+(wn||'')+'" placeholder="0" data-pot-sid="'+s.id+'" data-pot-idx="'+i+'" style="width:60px;padding:5px 6px;font-size:12px;text-align:center">'+
-        '<span class="r pot-rev" style="color:var(--grn)">'+rub(rev)+'</span>'+
-        '<span class="r pot-mo" style="color:var(--txt2)">'+rub(rev*WEEKS_PER_MONTH)+'</span>'+
+        '<span class="r pot-rev" style="color:var(--grn)">'+rub(profit)+'</span>'+
+        '<span class="r pot-mo" style="color:var(--txt2)">'+rub(profit*WEEKS_PER_MONTH)+'</span>'+
       '</div>';
     });
     html+='<div class="tcard">'+
@@ -1175,9 +1175,9 @@ document.getElementById('potGrid').addEventListener('input',function(e){
   entry.wn=parseInt(inp.value)||0;
   save();
   const row=inp.closest('.rrow');
-  const rev=(entry.p||0)*entry.wn;
-  row.querySelector('.pot-rev').textContent=rub(rev);
-  row.querySelector('.pot-mo').textContent=rub(rev*WEEKS_PER_MONTH);
+  const profit=((entry.p||0)-(entry.r||0))*entry.wn;
+  row.querySelector('.pot-rev').textContent=rub(profit);
+  row.querySelector('.pot-mo').textContent=rub(profit*WEEKS_PER_MONTH);
   recalcPotSummary();
 });
 
