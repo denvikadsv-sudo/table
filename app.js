@@ -461,7 +461,12 @@ const WEEKS_PER_MONTH=4.33;
 function sitemHtml(lbl,val,cls){
   return '<div class="sitem"><div class="slbl">'+lbl+'</div><div class="sval '+(cls||'')+'">'+val+'</div></div>';
 }
+let potView='students';
 function renderPotential() {
+  if(potView==='teachers') renderPotByTeacher();
+  else renderPotByStudent();
+}
+function renderPotByStudent() {
   const grid=document.getElementById('potGrid');
   const withTch=S.students.filter(function(s){return s.teachers&&s.teachers.length;});
   if(!withTch.length){
@@ -495,6 +500,69 @@ function renderPotential() {
   });
   grid.innerHTML=html;
   recalcPotSummary();
+}
+function renderPotByTeacher() {
+  const grid=document.getElementById('potGrid');
+  const byTid={};
+  S.students.forEach(function(s){
+    (s.teachers||[]).forEach(function(st,i){
+      if(!st.tid) return;
+      if(!byTid[st.tid]) byTid[st.tid]=[];
+      byTid[st.tid].push({s:s,idx:i,entry:st});
+    });
+  });
+  const ordered=S.teachers.filter(function(t){return byTid[t.id];});
+  if(!ordered.length){
+    grid.innerHTML='<div class="empty-msg" style="padding:24px;text-align:center;color:var(--txt3)">Нет учеников с назначенными учителями. Добавь учителей в карточке ученика.</div>';
+    recalcPotSummary();
+    return;
+  }
+  let html='';
+  ordered.forEach(function(t){
+    const items=byTid[t.id];
+    let tRev=0,tCost=0;
+    let rows='';
+    items.forEach(function(item){
+      const lt=getLT(t,item.entry.ltid);
+      const wn=item.entry.wn||0;
+      const rev=(item.entry.p||0)*wn, cost=(item.entry.r||0)*wn;
+      tRev+=rev; tCost+=cost;
+      const profit=rev-cost;
+      rows+='<div class="rrow" style="grid-template-columns:1fr 68px 88px 96px">'+
+        '<span style="color:var(--txt2)">'+esc(item.s.name||'—')+(lt?' · '+lt.dur+' мин':'')+'</span>'+
+        '<input class="fi pot-wn" type="number" min="0" value="'+(wn||'')+'" placeholder="0" data-pot-sid="'+item.s.id+'" data-pot-idx="'+item.idx+'" data-pot-tid="'+t.id+'" style="width:60px;padding:5px 6px;font-size:12px;text-align:center">'+
+        '<span class="r pot-rev" style="color:var(--grn)">'+rub(profit)+'</span>'+
+        '<span class="r pot-mo" style="color:var(--txt2)">'+rub(profit*WEEKS_PER_MONTH)+'</span>'+
+      '</div>';
+    });
+    const tProfit=tRev-tCost;
+    html+='<div class="tcard">'+
+      '<div class="tcard-hdr"><div class="tstripe" style="background:'+t.col+'"></div><div><h3>'+esc(t.full||t.name)+'</h3><p>'+esc(t.sub||'')+'</p></div></div>'+
+      '<div class="rrow rhdr" style="grid-template-columns:1fr 68px 88px 96px"><span>Ученик</span><span class="r">Уроков/нед</span><span class="r">Прибыль/нед</span><span class="r">Прибыль/мес</span></div>'+
+      rows+
+      '<div class="rrow" data-tch-footer="'+t.id+'" style="grid-template-columns:1fr 68px 88px 96px;font-weight:700;border-top:1px solid var(--bd)">'+
+        '<span>Итого</span><span></span>'+
+        '<span class="r f-rev" style="color:var(--acc)">'+rub(tProfit)+'</span>'+
+        '<span class="r f-mo" style="color:var(--acc)">'+rub(tProfit*WEEKS_PER_MONTH)+'</span>'+
+      '</div>'+
+    '</div>';
+  });
+  grid.innerHTML=html;
+  recalcPotSummary();
+}
+function recalcTeacherFooter(tid) {
+  const footer=document.querySelector('[data-tch-footer="'+tid+'"]'); if(!footer) return;
+  let rev=0,cost=0;
+  S.students.forEach(function(s){
+    (s.teachers||[]).forEach(function(t){
+      if(t.tid!==tid) return;
+      const wn=t.wn||0;
+      rev+=(t.p||0)*wn; cost+=(t.r||0)*wn;
+    });
+  });
+  const profit=rev-cost;
+  footer.querySelector('.f-rev').textContent=rub(profit);
+  footer.querySelector('.f-mo').textContent=rub(profit*WEEKS_PER_MONTH);
 }
 function updatePotSummary(rev,cost) {
   const el=document.getElementById('potSummary'); if(!el) return;
@@ -1178,7 +1246,17 @@ document.getElementById('potGrid').addEventListener('input',function(e){
   const profit=((entry.p||0)-(entry.r||0))*entry.wn;
   row.querySelector('.pot-rev').textContent=rub(profit);
   row.querySelector('.pot-mo').textContent=rub(profit*WEEKS_PER_MONTH);
+  if(inp.dataset.potTid) recalcTeacherFooter(inp.dataset.potTid);
   recalcPotSummary();
+});
+
+document.querySelectorAll('.subtab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('[data-pot-view]').forEach(function(b){b.classList.remove('on');});
+    btn.classList.add('on');
+    potView=btn.dataset.potView;
+    renderPotential();
+  });
 });
 
 document.getElementById('wkSel').addEventListener('change',e=>{S.curWk=e.target.value;save();render();});
